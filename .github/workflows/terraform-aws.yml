@@ -40,5 +40,8 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
+      - name: Terraform State List
+        run: terraform state list
+
       - name: Terraform Apply
         run: terraform apply -auto-approve
