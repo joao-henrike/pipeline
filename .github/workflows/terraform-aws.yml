@@ -3,7 +3,9 @@ name: "Terraform AWS CI/CD"
 on:
   push:
     branches: [ main ]
-    paths: [ 'aws/**' ]
+    paths:
+      - 'aws/**'
+      - '.github/workflows/**'
 
 permissions:
   contents: read
