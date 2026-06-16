@@ -6,25 +6,27 @@ on:
     paths: [ 'aws/**' ]
 
 permissions:
-  id-token: write 
   contents: read
 
 jobs:
   terraform:
     name: "Deploy Infraestrutura Fase 1"
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: ./aws
 
     steps:
       - name: Checkout do Repositorio
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Configurar Credenciais AWS via OIDC
+      - name: Configurar Credenciais AWS
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: <COLOQUE_O_ARN_AQUI>
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} # Essencial para o laboratório!
           aws-region: us-east-1
 
       - name: Setup Terraform
