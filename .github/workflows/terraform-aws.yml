@@ -28,11 +28,16 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} # Essencial para o laboratório!
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
+
+      - name: Verificar arquivos Terraform
+        run: |
+          pwd
+          ls -la
 
       - name: Terraform Init
         run: terraform init
@@ -40,8 +45,11 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
+      - name: Terraform Plan
+        run: terraform plan
+
       - name: Terraform State List
-        run: terraform state list
+        run: terraform state list || true
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
