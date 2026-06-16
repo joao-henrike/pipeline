@@ -20,6 +20,7 @@ jobs:
         working-directory: ./aws
 
     steps:
+
       - name: Checkout do Repositorio
         uses: actions/checkout@v4
 
@@ -31,13 +32,17 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+      - name: Verificar identidade AWS
+        run: aws sts get-caller-identity
 
       - name: Verificar arquivos Terraform
         run: |
           pwd
           ls -la
+          find . -name "*.tf"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
 
       - name: Terraform Init
         run: terraform init
