@@ -36,6 +36,7 @@ SECRET_NAME="techstock/frontend"
 WEBROOT="/usr/share/nginx/html/techstock"
 NODE_EXPORTER_VERSION="1.7.0"
 
+# Interpolação direta do DNS do ALB gerado pelo Terraform
 ALB_DNS="${aws_lb.main_alb.dns_name}"
 GITHUB_BASE="https://raw.githubusercontent.com/seu-usuario/seu-repositorio/main/frontend"
 
@@ -51,7 +52,7 @@ pid /run/nginx.pid;
 include /etc/nginx/modules-enabled/*.conf;
 events { worker_connections 1024; }
 http {
-    log_format main '\$remote_addr - \$remote_user [\$time_local] "\$request" \$status \$body_bytes_sent';
+    log_format main '$$remote_addr - $$remote_user [$$time_local] "$$request" $$status $$body_bytes_sent';
     access_log /var/log/nginx/access.log main;
     sendfile on; tcp_nopush on; keepalive_timeout 65;
     include /etc/nginx/mime.types;
@@ -60,18 +61,19 @@ http {
 }
 NGXMAIN
 
-mkdir -p $WEBROOT
-chown -R www-data:www-data $WEBROOT; chmod -R 755 $WEBROOT
+mkdir -p $$WEBROOT
+chown -R www-data:www-data $$WEBROOT; chmod -R 755 $$WEBROOT
 
 for f in index.html style.css app.js config.js; do
-  wget -q -O $WEBROOT/$f "$GITHUB_BASE/$f" || true
+  wget -q -O $$WEBROOT/$$f "$$GITHUB_BASE/$$f" || true
 done
-chown -R www-data:www-data $WEBROOT/; chmod -R 755 $WEBROOT/
+chown -R www-data:www-data $$WEBROOT/; chmod -R 755 $$WEBROOT/
 
-cat > $WEBROOT/config.js << CFG
-window.TECHSTOCK_CONFIG = { apiUrl: 'http://$ALB_DNS' };
+cat > $$WEBROOT/config.js << CFG
+// config.js — gerado automaticamente via Terraform
+window.TECHSTOCK_CONFIG = { apiUrl: 'http://$$ALB_DNS' };
 CFG
-chown www-data:www-data $WEBROOT/config.js; chmod 644 $WEBROOT/config.js
+chown www-data:www-data $$WEBROOT/config.js; chmod 644 $$WEBROOT/config.js
 
 cat > /etc/nginx/conf.d/techstock.conf << 'NGINX'
 server {
@@ -84,11 +86,11 @@ server {
         add_header Pragma "no-cache"; expires -1;
     }
     location / {
-        try_files \$uri \$uri/ /index.html;
+        try_files $$uri $$uri/ /index.html;
         add_header Cache-Control "no-cache";
         add_header X-Frame-Options "SAMEORIGIN";
     }
-    location ~* \.(css|js)$ { expires 1h; add_header Cache-Control "public, max-age=3600"; }
+    location ~* \.(css|js)$$ { expires 1h; add_header Cache-Control "public, max-age=3600"; }
     location = /health {
         default_type application/json;
         return 200 '{"ok":true,"service":"frontend-nginx"}';
@@ -99,22 +101,26 @@ server {
 NGINX
 
 rm -f /etc/nginx/sites-enabled/default
-systemctl enable nginx && systemctl restart nginx
+nginx -t
+systemctl enable nginx
+systemctl restart nginx
 
-wget -q "https://github.com/prometheus/node_exporter/releases/download/v$${NODE_EXPORTER_VERSION}/node_exporter-$${NODE_EXPORTER_VERSION}.linux-amd64.tar.gz" -O /tmp/ne.tar.gz
+wget -q "https://github.com/prometheus/node_exporter/releases/download/v$$NODE_EXPORTER_VERSION/node_exporter-$$NODE_EXPORTER_VERSION.linux-amd64.tar.gz" -O /tmp/ne.tar.gz
 tar xzf /tmp/ne.tar.gz -C /tmp/
-cp /tmp/node_exporter-$${NODE_EXPORTER_VERSION}.linux-amd64/node_exporter /usr/local/bin/
+cp /tmp/node_exporter-$$NODE_EXPORTER_VERSION.linux-amd64/node_exporter /usr/local/bin/
 chmod +x /usr/local/bin/node_exporter
 
 cat > /etc/systemd/system/node_exporter.service << 'NE'
 [Unit]
 Description=Node Exporter
 After=network.target
+
 [Service]
 Type=simple
 User=nobody
 ExecStart=/usr/local/bin/node_exporter
 Restart=on-failure
+
 [Install]
 WantedBy=multi-user.target
 NE
@@ -196,8 +202,9 @@ SECRET_NAME="techstock/backend"
 APP_DIR="/opt/techstock"
 NODE_EXPORTER_VERSION="1.7.0"
 
+# Captura automatica do endpoint do banco RDS
 DB_HOST="${aws_db_instance.estoque_db.endpoint}"
-DB_HOST=$${DB_HOST%:*}
+DB_HOST=$$${DB_HOST%:*}
 
 GITHUB_BASE="https://raw.githubusercontent.com/seu-usuario/seu-repositorio/main/backend"
 
@@ -207,22 +214,22 @@ apt-get install -y curl dirmngr apt-transport-https lsb-release ca-certificates 
 curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
 apt-get install -y nodejs
 
-useradd -r -m -d $APP_DIR -s /bin/bash techstock 2>/dev/null || true
-mkdir -p $APP_DIR/public
+useradd -r -m -d $$APP_DIR -s /bin/bash techstock 2>/dev/null || true
+mkdir -p $$APP_DIR/public
 
 for f in server.js package.json schema.sql; do
-  wget -q -O $APP_DIR/$f "$GITHUB_BASE/$f" || true
+  wget -q -O $$APP_DIR/$$f "$$GITHUB_BASE/$$f" || true
 done
-cd $APP_DIR && npm install --omit=dev
+cd $$APP_DIR && npm install --omit=dev
 
-cat > $APP_DIR/.env << ENV
-TECHSTOCK_SECRET_NAME=$SECRET_NAME
-AWS_REGION=$AWS_REGION
+cat > $$APP_DIR/.env << ENV
+TECHSTOCK_SECRET_NAME=$$SECRET_NAME
+AWS_REGION=$$AWS_REGION
 ENV
-chown techstock:techstock $APP_DIR/.env
-chmod 640 $APP_DIR/.env
-chown -R techstock:techstock $APP_DIR
-chmod 755 $APP_DIR
+chown techstock:techstock $$APP_DIR/.env
+chmod 640 $$APP_DIR/.env
+chown -R techstock:techstock $$APP_DIR
+chmod 755 $$APP_DIR
 
 cat > /etc/systemd/system/techstock.service << SVC
 [Unit]
@@ -232,8 +239,8 @@ After=network.target
 [Service]
 Type=simple
 User=techstock
-WorkingDirectory=$APP_DIR
-EnvironmentFile=$APP_DIR/.env
+WorkingDirectory=$$APP_DIR
+EnvironmentFile=$$APP_DIR/.env
 ExecStart=/usr/bin/node server.js
 Restart=on-failure
 RestartSec=5
@@ -248,26 +255,29 @@ systemctl daemon-reload
 systemctl enable techstock
 systemctl start techstock
 
-wget -q "https://github.com/prometheus/node_exporter/releases/download/v$${NODE_EXPORTER_VERSION}/node_exporter-$${NODE_EXPORTER_VERSION}.linux-amd64.tar.gz" -O /tmp/ne.tar.gz
+wget -q "https://github.com/prometheus/node_exporter/releases/download/v$$NODE_EXPORTER_VERSION/node_exporter-$$NODE_EXPORTER_VERSION.linux-amd64.tar.gz" -O /tmp/ne.tar.gz
 tar xzf /tmp/ne.tar.gz -C /tmp/
-cp /tmp/node_exporter-$${NODE_EXPORTER_VERSION}.linux-amd64/node_exporter /usr/local/bin/
+cp /tmp/node_exporter-$$NODE_EXPORTER_VERSION.linux-amd64/node_exporter /usr/local/bin/
 chmod +x /usr/local/bin/node_exporter
 
 cat > /etc/systemd/system/node_exporter.service << NE
 [Unit]
 Description=Node Exporter
 After=network.target
+
 [Service]
 Type=simple
 User=nobody
 ExecStart=/usr/local/bin/node_exporter
 Restart=on-failure
+
 [Install]
 WantedBy=multi-user.target
 NE
 systemctl daemon-reload
 systemctl enable node_exporter
 systemctl start node_exporter
+
 echo "Setup Concluido!"
 EOF
   )
@@ -298,7 +308,7 @@ resource "aws_autoscaling_policy" "backend_scale_up" {
 }
 
 # ==========================================
-# 3. MONITORAMENTO: INSTÂNCIA FIXA COFRE SECOPS
+# 3. MONITORAMENTO: INSTÂNCIA FIXA (NÓ DE TELEMETRIA)
 # ==========================================
 resource "aws_instance" "monitoramento" {
   ami                         = data.aws_ami.ubuntu.id
@@ -310,7 +320,7 @@ resource "aws_instance" "monitoramento" {
   associate_public_ip_address = true
   tags = { Name = "vm-monitoramento-techstock" }
 
-  user_data = <<-EOF
+  user_data = base64encode(<<-EOF
 #!/bin/bash
 exec > >(tee /var/log/user-data-monitoring.log|logger -t user-data -s 2>/dev/console) 2>&1
 
@@ -333,10 +343,10 @@ echo "--- [1/6] Sistema + Nginx (Ubuntu) ---"
 apt-get update -y
 apt-get install -y wget curl tar python3 nginx gnupg2 apt-transport-https
 
-echo "--- [2/6] Node Exporter v$NODE_EXPORTER_VERSION ---"
-wget -q "https://github.com/prometheus/node_exporter/releases/download/v$${NODE_EXPORTER_VERSION}/node_exporter-$${NODE_EXPORTER_VERSION}.linux-amd64.tar.gz" -O /tmp/ne.tar.gz
+echo "--- [2/6] Node Exporter v$$NODE_EXPORTER_VERSION ---"
+wget -q "https://github.com/prometheus/node_exporter/releases/download/v$$NODE_EXPORTER_VERSION/node_exporter-$$NODE_EXPORTER_VERSION.linux-amd64.tar.gz" -O /tmp/ne.tar.gz
 tar xzf /tmp/ne.tar.gz -C /tmp/
-cp /tmp/node_exporter-$${NODE_EXPORTER_VERSION}.linux-amd64/node_exporter /usr/local/bin/
+cp /tmp/node_exporter-$$NODE_EXPORTER_VERSION.linux-amd64/node_exporter /usr/local/bin/
 chmod +x /usr/local/bin/node_exporter
 
 cat > /etc/systemd/system/node_exporter.service << 'NE'
@@ -355,17 +365,17 @@ NE
 systemctl daemon-reload
 systemctl enable node_exporter --now
 
-echo "--- [3/6] Prometheus v$PROMETHEUS_VERSION ---"
+echo "--- [3/6] Prometheus v$$PROMETHEUS_VERSION ---"
 useradd --no-create-home --shell /bin/false prometheus 2>/dev/null || true
 mkdir -p /etc/prometheus /var/lib/prometheus
 chown prometheus:prometheus /etc/prometheus /var/lib/prometheus
-wget -q "https://github.com/prometheus/prometheus/releases/download/v$${PROMETHEUS_VERSION}/prometheus-$${PROMETHEUS_VERSION}.linux-amd64.tar.gz" -O /tmp/prom.tar.gz
+wget -q "https://github.com/prometheus/prometheus/releases/download/v$$PROMETHEUS_VERSION/prometheus-$$PROMETHEUS_VERSION.linux-amd64.tar.gz" -O /tmp/prom.tar.gz
 tar xzf /tmp/prom.tar.gz -C /tmp/
-cp /tmp/prometheus-$${PROMETHEUS_VERSION}.linux-amd64/prometheus  /usr/local/bin/
-cp /tmp/prometheus-$${PROMETHEUS_VERSION}.linux-amd64/promtool    /usr/local/bin/
+cp /tmp/prometheus-$$PROMETHEUS_VERSION.linux-amd64/prometheus  /usr/local/bin/
+cp /tmp/prometheus-$$PROMETHEUS_VERSION.linux-amd64/promtool    /usr/local/bin/
 chmod +x /usr/local/bin/prometheus /usr/local/bin/promtool
 
-# Criacao do manifesto com o AWS Service Discovery nativo para varrer o ASG do Backend
+# Configuração robusta com o AWS Service Discovery nativo para monitorar o Auto Scaling Group
 cat > /etc/prometheus/prometheus.yml << PROM
 global:
   scrape_interval: 15s
@@ -440,14 +450,14 @@ server {
     listen 80;
     location /grafana/ {
         proxy_pass http://127.0.0.1:3000;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header Host $$host;
+        proxy_set_header X-Real-IP $$remote_addr;
+        proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
     }
     location /prometheus/ {
         proxy_pass http://127.0.0.1:9090;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header Host $$host;
+        proxy_set_header X-Real-IP $$remote_addr;
     }
 }
 NGXCONF
@@ -456,7 +466,7 @@ rm -f /etc/nginx/sites-enabled/default
 systemctl enable nginx --now
 systemctl restart nginx
 
-echo "--- [5/6] Instalando Grafana ---"
+echo "--- [5/6] Instalando Grafana Enterprise ---"
 mkdir -p /etc/apt/keyrings/
 wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | tee /etc/apt/keyrings/grafana.gpg > /dev/null
 echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" | tee /etc/apt/sources.list.d/grafana.list
@@ -467,13 +477,13 @@ cat > /etc/grafana/grafana.ini << GINI
 [server]
 http_addr = 0.0.0.0
 http_port = 3000
-domain    = $ALB_DNS
+domain    = $$ALB_DNS
 root_url  = %(protocol)s://%(domain)s/grafana/
 serve_from_sub_path = true
 
 [security]
 admin_user     = admin
-admin_password = $GRAFANA_PASSWORD
+admin_password = $$GRAFANA_PASSWORD
 secret_key     = techstock-\$(date +%s)
 allow_embedding = true
 cookie_secure   = false
@@ -489,15 +499,11 @@ systemctl daemon-reload
 systemctl enable grafana-server --now
 
 echo "--- [6/6] Sincronizacao de DataSources e Dashboards ---"
-# Armazena as chaves no ambiente de execucao para consumo seguro do modulo Python
-export GF_PASS="$GRAFANA_PASSWORD"
-export GF_UID="$DATASOURCE_UID"
-export GF_ALB="$ALB_DNS"
-export GF_GIT="$GITHUB_BASE"
-export GF_SEC="$SECRET_NAME"
-export GF_REG="$AWS_REGION"
+export GF_PASS="$$GRAFANA_PASSWORD"
+export GF_UID="$$DATASOURCE_UID"
+export GF_ALB="$$ALB_DNS"
+export GF_GIT="$$GITHUB_BASE"
 
-# Aguarda a estabilizacao interna do banco embarcado do Grafana
 sleep 15
 
 python3 << 'PYEOF'
@@ -525,27 +531,23 @@ def gf(method, path, data=None):
     except Exception as e:
         return {"error": str(e)}
 
-# Validacao de integridade
 for i in range(15):
     h = gf("GET", "/api/health")
     if h.get("database") == "ok": break
     time.sleep(5)
 
-# Remocao de conflitos antigos
 ds_list = gf("GET", "/api/datasources")
 if isinstance(ds_list, list):
     for ds in ds_list:
         if ds.get("type") == "prometheus":
             gf("DELETE", f"/api/datasources/uid/{ds.get('uid')}")
 
-# Injecao do DataSource apontando para o sub-path do Nginx Proxy
 gf("POST", "/api/datasources", {
     "name": "Prometheus", "type": "prometheus", "uid": DS_UID,
     "url": f"http://localhost/prometheus", "access": "proxy", "isDefault": True,
     "jsonData": {"timeInterval": "15s"}
 })
 
-# Download e provisionamento automatizado dos dashboards comunitarios da Grafana Labs
 for gnet_id, slug in [(1860,"node-exporter-full"),(11159,"nodejs-application"),(3662,"prometheus-stats")]:
     try:
         req = urllib.request.Request(f"https://grafana.com/api/dashboards/{gnet_id}/revisions/latest/download")
@@ -558,12 +560,11 @@ for gnet_id, slug in [(1860,"node-exporter-full"),(11159,"nodejs-application"),(
         dash["id"] = None
         dash["uid"] = slug
         dash_str = json.dumps(dash)
-        for ph in ['"${DS_PROMETHEUS}"','"${DS_PROMETHEUS_1}"','${DS_PROMETHEUS}','"${DS_THEMIS}"']:
+        for ph in ['"$${DS_PROMETHEUS}"','"$${DS_PROMETHEUS_1}"','$${DS_PROMETHEUS}','"$${DS_THEMIS}"']:
             dash_str = dash_str.replace(ph, f'"{DS_UID}"')
         gf("POST", "/api/dashboards/db", {"dashboard": json.loads(dash_str), "overwrite": True, "folderId": 0})
     except: pass
 
-# Varredura e parser dos dashboards customizados do repositorio corporativo TechStock
 if GITHUB and "seu-repositorio" not in GITHUB:
     DASH_DIR = "/tmp/techstock-dashboards"
     os.makedirs(DASH_DIR, exist_ok=True)
@@ -577,7 +578,6 @@ if GITHUB and "seu-repositorio" not in GITHUB:
         except: pass
 PYEOF
 
-# Provisionamento das métricas da maquina de telemetria no CloudWatch Agent
 wget -q https://amazoncloudwatch-agent.s3.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
 dpkg -i -E ./amazon-cloudwatch-agent.deb
 
@@ -595,3 +595,6 @@ systemctl enable amazon-cloudwatch-agent --now
 systemctl start amazon-cloudwatch-agent
 
 echo "Setup Monitoring Concluido com Sucesso!"
+EOF
+  )
+}
