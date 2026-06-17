@@ -3,11 +3,11 @@ name: "Terraform AWS CI/CD"
 on:
   push:
     branches: [ main ]
-    paths: [ 'aws/**', 'bootstrap/**' ]
+    paths: [ 'aws/**', '.github/workflows/**' ]
 
 jobs:
   terraform:
-    name: "Deploy Multi-Fase: Bootstrap e Infraestrutura"
+    name: "Validacao Estrita e Deploy"
     runs-on: ubuntu-latest
 
     steps:
@@ -22,31 +22,43 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
+      # ==========================================
+      # FASE 1: BOOTSTRAP (Idempotente)
+      # ==========================================
+      - name: Verificar e Criar S3 State
+        run: |
+          BUCKET_NAME="techstock-tfstate-joao-7733"
+          if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+            echo "Bucket $BUCKET_NAME pronto."
+          else
+            echo "Criando fundacao de estado: $BUCKET_NAME"
+            aws s3 mb s3://$BUCKET_NAME --region us-east-1
+          fi
+
+      # ==========================================
+      # FASE 2: INICIALIZAÇÃO
+      # ==========================================
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
-      # ==========================================
-      # FASE 1: BOOTSTRAP (Cria o S3 do Estado)
-      # ==========================================
-      - name: Bootstrap - Init
-        run: terraform init
-        working-directory: ./bootstrap
-
-      - name: Bootstrap - Apply
-        run: terraform apply -auto-approve
-        working-directory: ./bootstrap
-
-      # ==========================================
-      # FASE 2: INFRAESTRUTURA (Usa o S3 recém-criado)
-      # ==========================================
       - name: Infraestrutura - Init
         run: terraform init
         working-directory: ./aws
 
-      - name: Infraestrutura - Validate
+      # ==========================================
+      # FASE 3: VALIDAÇÃO TOTAL (BLOQUEANTE)
+      # ==========================================
+      - name: Infraestrutura - Validate (Sintaxe e Estrutura)
         run: terraform validate
         working-directory: ./aws
 
-      - name: Infraestrutura - Apply
-        run: terraform apply -auto-approve
+      - name: Infraestrutura - Plan (Simulacao Real na AWS)
+        run: terraform plan -out=tfplan
+        working-directory: ./aws
+
+      # ==========================================
+      # FASE 4: EXECUÇÃO (APENAS SE A FASE 3 PASSAR)
+      # ==========================================
+      - name: Infraestrutura - Apply (Deploy do Plano Validado)
+        run: terraform apply -auto-approve tfplan
         working-directory: ./aws
