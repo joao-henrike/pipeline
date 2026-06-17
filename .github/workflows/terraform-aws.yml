@@ -3,15 +3,12 @@ name: "Terraform AWS CI/CD"
 on:
   push:
     branches: [ main ]
-    paths: [ 'aws/**' ]
+    paths: [ 'aws/**', 'bootstrap/**' ]
 
 jobs:
   terraform:
-    name: "Deploy Infraestrutura Fase 1"
+    name: "Deploy Multi-Fase: Bootstrap e Infraestrutura"
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./aws
 
     steps:
       - name: Checkout do Repositorio
@@ -28,11 +25,28 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: Terraform Init
+      # ==========================================
+      # FASE 1: BOOTSTRAP (Cria o S3 do Estado)
+      # ==========================================
+      - name: Bootstrap - Init
         run: terraform init
+        working-directory: ./bootstrap
 
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Apply
+      - name: Bootstrap - Apply
         run: terraform apply -auto-approve
+        working-directory: ./bootstrap
+
+      # ==========================================
+      # FASE 2: INFRAESTRUTURA (Usa o S3 recém-criado)
+      # ==========================================
+      - name: Infraestrutura - Init
+        run: terraform init
+        working-directory: ./aws
+
+      - name: Infraestrutura - Validate
+        run: terraform validate
+        working-directory: ./aws
+
+      - name: Infraestrutura - Apply
+        run: terraform apply -auto-approve
+        working-directory: ./aws
