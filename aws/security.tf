@@ -9,8 +9,9 @@ resource "aws_key_pair" "generated_key" {
 }
 
 resource "aws_security_group" "sg_eice" {
-  name   = "endpoint-conexao"
-  vpc_id = aws_vpc.main.id
+  name        = "endpoint-conexao"
+  description = "Permite tunel SSH interno"
+  vpc_id      = aws_vpc.main.id
   egress { 
     from_port   = 22
     to_port     = 22
@@ -20,8 +21,9 @@ resource "aws_security_group" "sg_eice" {
 }
 
 resource "aws_security_group" "sg_alb" {
-  name   = "techstock-alb-sg"
-  vpc_id = aws_vpc.main.id
+  name        = "techstock-alb-sg"
+  description = "Porta de entrada publica do sistema"
+  vpc_id      = aws_vpc.main.id
   ingress { 
     from_port   = 80
     to_port     = 80
@@ -37,8 +39,9 @@ resource "aws_security_group" "sg_alb" {
 }
 
 resource "aws_security_group" "sg_frontend" {
-  name   = "frontend-ui"
-  vpc_id = aws_vpc.main.id
+  name        = "frontend-ui"
+  description = "Acesso restrito ao ALB"
+  vpc_id      = aws_vpc.main.id
   ingress { 
     from_port       = 22
     to_port         = 22
@@ -60,8 +63,9 @@ resource "aws_security_group" "sg_frontend" {
 }
 
 resource "aws_security_group" "sg_backend" {
-  name   = "backend-api"
-  vpc_id = aws_vpc.main.id
+  name        = "backend-api"
+  description = "Regras restritas da API"
+  vpc_id      = aws_vpc.main.id
   ingress { 
     from_port       = 22
     to_port         = 22
@@ -89,8 +93,9 @@ resource "aws_security_group" "sg_backend" {
 }
 
 resource "aws_security_group" "sg_monitoramento" {
-  name   = "telemetria-grafana"
-  vpc_id = aws_vpc.main.id
+  name        = "telemetria-grafana"
+  description = "Painel de operacoes SecOps"
+  vpc_id      = aws_vpc.main.id
   ingress { 
     from_port       = 22
     to_port         = 22
@@ -112,8 +117,9 @@ resource "aws_security_group" "sg_monitoramento" {
 }
 
 resource "aws_security_group" "sg_database" {
-  name   = "rds-estoque"
-  vpc_id = aws_vpc.main.id
+  name        = "rds-estoque"
+  description = "Bloqueia tudo, exceto a API"
+  vpc_id      = aws_vpc.main.id
   ingress { 
     from_port       = 5432
     to_port         = 5432
