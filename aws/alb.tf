@@ -7,9 +7,16 @@ resource "aws_subnet" "public_ec2_b" {
   tags                    = { Name = "subnet-public-b-techstock" }
 }
 
+# ==========================================
+# CORRECAO: Rastreamento dinamico da Tabela de Rotas
+# ==========================================
+data "aws_route_table" "rt_publica" {
+  subnet_id = aws_subnet.public_ec2.id
+}
+
 resource "aws_route_table_association" "public_b" {
   subnet_id      = aws_subnet.public_ec2_b.id
-  route_table_id = aws_subnet.public_ec2.map_public_ip_on_launch ? aws_subnet.public_ec2.id : aws_subnet.public_ec2.id
+  route_table_id = data.aws_route_table.rt_publica.id
 }
 
 # ==========================================
@@ -56,7 +63,7 @@ resource "aws_lb_target_group" "monitoring_tg" {
   }
 }
 
-# Fixando a maquina de monitoramento no Target Group dela
+# Fixando a maquina de monitoramento no Target Group
 resource "aws_lb_target_group_attachment" "monitoring_attach" {
   target_group_arn = aws_lb_target_group.monitoring_tg.arn
   target_id        = aws_instance.monitoramento.id
@@ -64,14 +71,13 @@ resource "aws_lb_target_group_attachment" "monitoring_attach" {
 }
 
 # ==========================================
-# REGRAS DO LISTENER (Atendendo ao seu Script)
+# REGRAS DO LISTENER
 # ==========================================
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main_alb.arn
   port              = "80"
   protocol          = "HTTP"
 
-  # Fallback padrao vai para o Frontend
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.frontend_tg.arn
