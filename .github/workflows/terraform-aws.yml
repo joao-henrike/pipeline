@@ -3,43 +3,27 @@ name: "Terraform AWS CI/CD"
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'bootstrap/**'
-      - '.github/workflows/**'
-
-permissions:
-  contents: read
+    paths: [ 'aws/**' ]
 
 jobs:
   terraform:
     name: "Deploy Infraestrutura Fase 1"
     runs-on: ubuntu-latest
-
     defaults:
       run:
-        working-directory: ./bootstrap
+        working-directory: ./aws
 
     steps:
-
       - name: Checkout do Repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Configurar Credenciais AWS
+      - name: Configurar Credenciais AWS via Secrets
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
-
-      - name: Verificar identidade AWS
-        run: aws sts get-caller-identity
-
-      - name: Verificar arquivos Terraform
-        run: |
-          pwd
-          ls -la
-          find . -name "*.tf"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -49,12 +33,6 @@ jobs:
 
       - name: Terraform Validate
         run: terraform validate
-
-      - name: Terraform Plan
-        run: terraform plan
-
-      - name: Terraform State List
-        run: terraform state list || true
 
       - name: Terraform Apply
         run: terraform apply -auto-approve

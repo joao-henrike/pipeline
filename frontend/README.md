@@ -1,0 +1,1 @@
+# TechStock - Frontend (Interface Web)
