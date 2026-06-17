@@ -9,7 +9,7 @@ resource "aws_key_pair" "generated_key" {
 }
 
 resource "aws_security_group" "sg_eice" {
-  name        = "sg-endpoint-conexao"
+  name        = "endpoint-conexao" # Prefixo sg- removido
   description = "Permite tunel SSH interno"
   vpc_id      = aws_vpc.main.id
   egress {
@@ -21,7 +21,7 @@ resource "aws_security_group" "sg_eice" {
 }
 
 resource "aws_security_group" "sg_backend" {
-  name        = "sg-backend-api"
+  name        = "backend-api" # Prefixo sg- removido
   description = "Firewall da EC2"
   vpc_id      = aws_vpc.main.id
   
@@ -50,7 +50,7 @@ resource "aws_security_group" "sg_backend" {
 }
 
 resource "aws_security_group" "sg_database" {
-  name        = "sg-rds-estoque"
+  name        = "rds-estoque" # Prefixo sg- removido
   description = "Bloqueia tudo, exceto o Backend"
   vpc_id      = aws_vpc.main.id
   
