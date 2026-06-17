@@ -1,0 +1,46 @@
+name: "Terraform AWS - DESTROY"
+
+on:
+  workflow_dispatch: # Ativa o botão de execução manual no painel do GitHub
+
+jobs:
+  destroy:
+    name: "Destruição Total da Infraestrutura"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do Repositorio
+        uses: actions/checkout@v3
+
+      - name: Configurar Credenciais AWS via Secrets
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Infraestrutura - Init
+        run: terraform init
+        working-directory: ./aws
+
+      # ==========================================
+      # DESTRUIÇÃO CONTROLADA VIA IACO
+      # ==========================================
+      - name: Terraform Destroy (Wipe Infra)
+        run: terraform destroy -auto-approve
+        working-directory: ./aws
+
+      # ==========================================
+      # LIMPEZA DO BUCKET DE ESTADO (OPCIONAL/RESET TOTAL)
+      # ==========================================
+      - name: Apagar Bucket de Estado S3
+        run: |
+          BUCKET_NAME="techstock-tfstate-joao-7733"
+          if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+            echo "Esvaziando e removendo o bucket de estado..."
+            aws s3 rb s3://$BUCKET_NAME --force
+          fi
