@@ -21,15 +21,23 @@ resource "aws_security_group" "sg_eice" {
 }
 
 # ==========================================
-# NOVO: FIREWALL DO LOAD BALANCER (ALB)
+# 1. FIREWALL DO FRONTEND (Vitrine)
 # ==========================================
-resource "aws_security_group" "sg_alb" {
-  name        = "techstock-alb-sg"
-  description = "Porta de entrada publica do sistema"
+resource "aws_security_group" "sg_frontend" {
+  name        = "frontend-ui"
+  description = "Acesso de usuarios ao sistema web"
   vpc_id      = aws_vpc.main.id
-
+  
   ingress {
-    description = "HTTP publico do mundo"
+    description     = "SSH via Endpoint"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = [aws_security_group.sg_eice.id]
+  }
+  
+  ingress {
+    description = "Trafego HTTP do mundo"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -45,39 +53,7 @@ resource "aws_security_group" "sg_alb" {
 }
 
 # ==========================================
-# ALTERADO: FIREWALL DO FRONTEND
-# ==========================================
-resource "aws_security_group" "sg_frontend" {
-  name        = "frontend-ui"
-  description = "Acesso restrito ao ALB"
-  vpc_id      = aws_vpc.main.id
-  
-  ingress {
-    description     = "SSH via Endpoint"
-    from_port       = 22
-    to_port         = 22
-    protocol        = "tcp"
-    security_groups = [aws_security_group.sg_eice.id]
-  }
-  
-  ingress {
-    description     = "HTTP vindo APENAS do Load Balancer"
-    from_port       = 80
-    to_port         = 80
-    protocol        = "tcp"
-    security_groups = [aws_security_group.sg_alb.id] # Isolamento de borda
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-# ==========================================
-# ALTERADO: FIREWALL DO BACKEND
+# 2. FIREWALL DO BACKEND (Trancado)
 # ==========================================
 resource "aws_security_group" "sg_backend" {
   name        = "backend-api"
@@ -93,19 +69,19 @@ resource "aws_security_group" "sg_backend" {
   }
   
   ingress {
-    description     = "HTTP vindo do ALB ou do Frontend"
+    description     = "Trafego HTTP APENAS do Frontend"
     from_port       = 80
     to_port         = 80
     protocol        = "tcp"
-    security_groups = [aws_security_group.sg_frontend.id, aws_security_group.sg_alb.id]
+    security_groups = [aws_security_group.sg_frontend.id] # Elo de confianca
   }
 
   ingress {
     description = "Permite coleta de metricas do Monitoramento"
-    from_port   = 9100
+    from_port   = 9100 # Porta padrao do Node Exporter
     to_port     = 9100
     protocol    = "tcp"
-    cidr_blocks = ["10.1.0.0/16"]
+    cidr_blocks = ["10.1.0.0/16"] # Confia na rede interna (VPC)
   }
 
   egress {
@@ -117,7 +93,7 @@ resource "aws_security_group" "sg_backend" {
 }
 
 # ==========================================
-# FIREWALL DO MONITORAMENTO
+# 3. FIREWALL DO MONITORAMENTO (Telemetria)
 # ==========================================
 resource "aws_security_group" "sg_monitoramento" {
   name        = "telemetria-grafana"
@@ -157,7 +133,7 @@ resource "aws_security_group" "sg_monitoramento" {
 }
 
 # ==========================================
-# FIREWALL DO RDS
+# 4. FIREWALL DO RDS (Cofre)
 # ==========================================
 resource "aws_security_group" "sg_database" {
   name        = "rds-estoque"
