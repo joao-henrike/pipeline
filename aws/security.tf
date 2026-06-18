@@ -40,7 +40,7 @@ resource "aws_security_group" "sg_alb" {
 
 resource "aws_security_group" "sg_frontend" {
   name        = "frontend-ui"
-  description = "Acesso restrito ao ALB"
+  description = "Acesso de usuarios ao sistema web" # RECONCILIACAO: Texto original restaura In-Place update
   vpc_id      = aws_vpc.main.id
   ingress { 
     from_port       = 22
