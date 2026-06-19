@@ -1,6 +1,7 @@
 name: "Terraform AWS CI/CD"
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths: [ 'aws/**', '.github/workflows/**' ]
