@@ -66,5 +66,5 @@ jobs:
 
       - name: 🚀 Sincronizar Frontend para o S3
         run: |
-          aws s3 sync . s3://techstock-frontend-joao-7733 --delete --exclude "*.tf" --exclude "*.sh" --exclude ".git*"
+          aws s3 sync . s3://techstock-frontend-ui-joao --delete --exclude "*.tf" --exclude "*.sh" --exclude ".git*"
 
