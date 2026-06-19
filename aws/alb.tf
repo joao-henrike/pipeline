@@ -10,13 +10,10 @@ resource "aws_subnet" "public_ec2_b" {
 # ==========================================
 # CORRECAO: Rastreamento dinamico da Tabela de Rotas
 # ==========================================
-data "aws_route_table" "rt_publica" {
-  subnet_id = aws_subnet.public_ec2.id
-}
 
 resource "aws_route_table_association" "public_b" {
   subnet_id      = aws_subnet.public_ec2_b.id
-  route_table_id = data.aws_route_table.rt_publica.id
+  route_table_id = aws_route_table.public_rt.id
 }
 
 # ==========================================
