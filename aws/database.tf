@@ -4,7 +4,8 @@ resource "aws_db_subnet_group" "rds_subnet" {
 }
 
 resource "aws_db_instance" "estoque_db" {
-  identifier             = "techstock-db-master"
+  identifier             = "estoque-db-v2"
+  skip_final_snapshot    = true
   engine                 = "postgres"
   engine_version         = "15"
   instance_class         = "db.t3.micro"
@@ -15,6 +16,5 @@ resource "aws_db_instance" "estoque_db" {
   db_subnet_group_name   = aws_db_subnet_group.rds_subnet.name
   vpc_security_group_ids = [aws_security_group.sg_database.id]
   publicly_accessible    = false
-  skip_final_snapshot    = true
   tags                   = { Name = "rds-banco-techstock" }
 }
