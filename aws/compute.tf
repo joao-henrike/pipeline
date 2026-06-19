@@ -322,7 +322,7 @@ resource "aws_instance" "monitoramento" {
   key_name                    = aws_key_pair.generated_key.key_name
   iam_instance_profile        = "LabInstanceProfile"
   associate_public_ip_address = true
-  tags = { Name = "vm-monitoramento-techstock" }
+  tags                        = { Name = "vm-monitoramento-techstock" }
 
   # Utilizamos <<-EOF para permitir injeção de variáveis do Terraform.
   # Variáveis do Bash estão escapadas com $$ para não quebrar a compilação.

@@ -16,5 +16,5 @@ resource "aws_db_instance" "estoque_db" {
   vpc_security_group_ids = [aws_security_group.sg_database.id]
   publicly_accessible    = false
   skip_final_snapshot    = true
-  tags = { Name = "rds-banco-techstock" }
+  tags                   = { Name = "rds-banco-techstock" }
 }

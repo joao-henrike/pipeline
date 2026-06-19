@@ -35,8 +35,8 @@ resource "aws_lb_target_group" "frontend_tg" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
-  health_check { 
-    path = "/health" 
+  health_check {
+    path = "/health"
   }
 }
 
@@ -45,8 +45,8 @@ resource "aws_lb_target_group" "backend_tg" {
   port     = 3000
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
-  health_check { 
-    path = "/api/health" 
+  health_check {
+    path = "/api/health"
   }
 }
 
@@ -55,8 +55,8 @@ resource "aws_lb_target_group" "monitoring_tg" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
-  health_check { 
-    path = "/grafana/api/health" 
+  health_check {
+    path = "/grafana/api/health"
   }
 }
 
@@ -88,10 +88,10 @@ resource "aws_lb_listener_rule" "grafana_routing" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.monitoring_tg.arn
   }
-  condition { 
-    path_pattern { 
-      values = ["/grafana*"] 
-    } 
+  condition {
+    path_pattern {
+      values = ["/grafana*"]
+    }
   }
 }
 
@@ -102,10 +102,10 @@ resource "aws_lb_listener_rule" "prometheus_routing" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.monitoring_tg.arn
   }
-  condition { 
-    path_pattern { 
-      values = ["/prometheus*"] 
-    } 
+  condition {
+    path_pattern {
+      values = ["/prometheus*"]
+    }
   }
 }
 
@@ -116,9 +116,9 @@ resource "aws_lb_listener_rule" "api_routing" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.backend_tg.arn
   }
-  condition { 
-    path_pattern { 
-      values = ["/api*"] 
-    } 
+  condition {
+    path_pattern {
+      values = ["/api*"]
+    }
   }
 }
