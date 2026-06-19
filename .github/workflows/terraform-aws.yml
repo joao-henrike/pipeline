@@ -63,3 +63,8 @@ jobs:
       - name: Infraestrutura - Apply (Deploy do Plano Validado)
         run: terraform apply -auto-approve tfplan
         working-directory: ./aws
+
+      - name: 🚀 Sincronizar Frontend para o S3
+        run: |
+          aws s3 sync . s3://techstock-frontend-joao-7733 --delete --exclude "*.tf" --exclude "*.sh" --exclude ".git*"
+
