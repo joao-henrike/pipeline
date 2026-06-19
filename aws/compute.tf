@@ -25,6 +25,8 @@ resource "aws_launch_template" "frontend_lt" {
 
   user_data = base64encode(<<-EOF
 #!/bin/bash
+exec > >(tee /var/log/techstock-boot.log | logger -t user-data -s 2>/dev/console) 2>&1
+set -e
 exec > >(tee /var/log/user-data-frontend.log|logger -t user-data -s 2>/dev/console) 2>&1
 
 echo "============================================"
@@ -191,6 +193,8 @@ resource "aws_launch_template" "backend_lt" {
 
   user_data = base64encode(<<-EOF
 #!/bin/bash
+exec > >(tee /var/log/techstock-boot.log | logger -t user-data -s 2>/dev/console) 2>&1
+set -e
 exec > >(tee /var/log/user-data-backend.log|logger -t user-data -s 2>/dev/console) 2>&1
 
 echo "============================================"
@@ -322,6 +326,8 @@ resource "aws_instance" "monitoramento" {
 
   user_data = base64encode(<<-EOF
 #!/bin/bash
+exec > >(tee /var/log/techstock-boot.log | logger -t user-data -s 2>/dev/console) 2>&1
+set -e
 exec > >(tee /var/log/user-data-monitoring.log|logger -t user-data -s 2>/dev/console) 2>&1
 
 echo "============================================"
