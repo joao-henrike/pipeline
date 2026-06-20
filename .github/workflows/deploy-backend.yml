@@ -1,0 +1,107 @@
+# =============================================================================
+# WORKFLOW: Deploy Backend nas VMs
+# Executa manualmente (workflow_dispatch) ou em push para main
+# quando o diretório backend/ é alterado.
+# Requer secrets: AWS_KEY_PEM, BASTION_IP, EC2_PRIVATE_IP, STUDENT_NAME
+# =============================================================================
+name: Deploy Backend
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deploy em qual VM? (aws | azure | both)"
+        required: true
+        default: "both"
+        type: choice
+        options: [aws, azure, both]
+
+jobs:
+  deploy-aws:
+    name: Deploy na EC2 AWS (via Bastion)
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (inputs.target == 'aws' || inputs.target == 'both'))
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar chave SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AWS_KEY_PEM }}"    > ~/.ssh/aws_key.pem
+          echo "${{ secrets.AZURE_KEY_PEM }}"  > ~/.ssh/azure_key.pem
+          chmod 400 ~/.ssh/aws_key.pem ~/.ssh/azure_key.pem
+          # Adicionar hosts ao known_hosts para evitar prompt interativo
+          ssh-keyscan -H "${{ vars.BASTION_IP }}"      >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -H "${{ vars.EC2_PRIVATE_IP }}"  >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Copiar backend para EC2 privada (via Bastion)
+        run: |
+          scp -i ~/.ssh/aws_key.pem               -o StrictHostKeyChecking=no               -o ProxyJump="ec2-user@${{ vars.BASTION_IP }}"               -r backend/               "ec2-user@${{ vars.EC2_PRIVATE_IP }}:/tmp/backend-deploy/"
+
+      - name: Instalar e reiniciar backend na EC2
+        run: |
+          ssh -i ~/.ssh/aws_key.pem               -o StrictHostKeyChecking=no               -J "ec2-user@${{ vars.BASTION_IP }}"               "ec2-user@${{ vars.EC2_PRIVATE_IP }}" << "CMDS"
+            set -e
+            sudo cp -r /tmp/backend-deploy/backend/* /opt/multicloud-backend/
+            cd /opt/multicloud-backend
+            sudo pip3 install -r requirements.txt -q
+            sudo systemctl restart multicloud-backend
+            sleep 3
+            systemctl is-active multicloud-backend && echo "✅ Backend AWS rodando!" || echo "❌ Falhou"
+          CMDS
+
+      - name: Health check
+        run: |
+          sleep 5
+          # Health check via Bastion (port forward)
+          ssh -i ~/.ssh/aws_key.pem               -o StrictHostKeyChecking=no               -J "ec2-user@${{ vars.BASTION_IP }}"               -L 8888:localhost:8000               "ec2-user@${{ vars.EC2_PRIVATE_IP }}" -fN &
+          sleep 3
+          curl -sf http://localhost:8888/api/status/health && echo "✅ Health check OK" || echo "⚠️ Health check falhou"
+
+  deploy-azure:
+    name: Deploy na VM Azure
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (inputs.target == 'azure' || inputs.target == 'both'))
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar chave SSH Azure
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AZURE_KEY_PEM }}" > ~/.ssh/azure_key.pem
+          chmod 400 ~/.ssh/azure_key.pem
+          ssh-keyscan -H "${{ vars.AZURE_VM_PUBLIC_IP }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Copiar e instalar backend na VM Azure
+        run: |
+          scp -i ~/.ssh/azure_key.pem               -o StrictHostKeyChecking=no               -r backend/               "azureuser@${{ vars.AZURE_VM_PUBLIC_IP }}:/tmp/backend-deploy/"
+
+          ssh -i ~/.ssh/azure_key.pem               -o StrictHostKeyChecking=no               "azureuser@${{ vars.AZURE_VM_PUBLIC_IP }}" << "CMDS"
+            set -e
+            sudo cp -r /tmp/backend-deploy/backend/* /opt/multicloud-backend/
+            cd /opt/multicloud-backend
+            sudo pip3 install -r requirements.txt -q
+            sudo systemctl restart multicloud-backend
+            sleep 3
+            systemctl is-active multicloud-backend && echo "✅ Backend Azure rodando!" || echo "❌ Falhou"
+          CMDS
+
+      - name: Health check Azure
+        run: |
+          sleep 5
+          curl -sf "http://${{ vars.AZURE_VM_PUBLIC_IP }}:8000/api/status/health" &&           echo "✅ Health check Azure OK" || echo "⚠️ Health check falhou"

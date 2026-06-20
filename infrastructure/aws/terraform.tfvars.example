@@ -1,0 +1,38 @@
+# =============================================================================
+# EXEMPLO: infrastructure/aws/terraform.tfvars
+# Copie este arquivo: cp terraform.tfvars.example terraform.tfvars
+# Preencha todos os valores antes do terraform apply
+# =============================================================================
+
+# OBRIGATÓRIO — coloque seu nome sem espaços
+student_name = "SeuNome"
+
+# Região e ambiente
+aws_region    = "us-east-1"
+environment   = "dev"
+
+# Rede AWS (não altere salvo se houver conflito com sua rede local)
+aws_vpc_cidr            = "10.0.0.0/16"
+aws_public_subnet_cidr  = "10.0.0.0/24"
+aws_private_subnet_cidr = "10.0.1.0/24"
+availability_zone       = "us-east-1a"
+
+# SEGURANÇA: restrinja para seu IP em produção — ex: ["203.0.113.10/32"]
+admin_ip_cidrs = ["0.0.0.0/0"]
+
+# Rede Azure (deve coincidir com azure/terraform.tfvars)
+azure_vnet_cidr = "10.1.0.0/16"
+
+# Preenchido automaticamente pelo deploy.sh após Fase 1 (Azure)
+# Não altere manualmente — deixe null até o deploy.sh preencher
+azure_vpn_gateway_ip = null
+create_vpn_tunnel    = false
+
+# VPN — USE O MESMO PSK no azure/terraform.tfvars!
+vpn_shared_key = "MultiCloudVPN@2024!"  # troque por uma senha forte
+vpn_bgp_asn    = 65000
+
+# EC2
+ec2_instance_type     = "t2.micro"  # free tier eligible
+bastion_instance_type = "t2.micro"  # free tier eligible
+create_bastion        = true        # Bastion = frontend EC2 (roda backend FastAPI)

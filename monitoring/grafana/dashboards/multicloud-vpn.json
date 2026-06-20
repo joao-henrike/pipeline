@@ -1,0 +1,161 @@
+{
+  "id": null,
+  "uid": "multicloud-vpn-overview",
+  "title": "MultiCloud VPN — Visão Geral",
+  "description": "Dashboard principal: VMs AWS e Azure, túnel VPN e métricas de sistema",
+  "tags": ["multicloud", "vpn", "aws", "azure"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "title": "AWS Backend — Status",
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "UP",   "color": "green" } } },
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red"   } } }
+          ]
+        }
+      },
+      "targets": [{
+        "expr": "up{job="fastapi-backend-aws"}",
+        "legendFormat": "AWS Backend"
+      }],
+      "datasource": "Prometheus"
+    },
+    {
+      "id": 2, "type": "stat", "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "title": "Azure VM — Status (via VPN)",
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "UP",   "color": "green" } } },
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red"   } } }
+          ]
+        }
+      },
+      "targets": [{
+        "expr": "up{job="node-vm-azure"}",
+        "legendFormat": "Azure VM"
+      }],
+      "datasource": "Prometheus"
+    },
+    {
+      "id": 3, "type": "stat", "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "title": "Latência VPN (ms)",
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "yellow", "value": 50   },
+              { "color": "red",    "value": 150  }
+            ]
+          }
+        }
+      },
+      "targets": [{
+        "expr": "probe_duration_seconds{job="blackbox-ping-azure"} * 1000",
+        "legendFormat": "RTT VPN"
+      }],
+      "datasource": "Prometheus"
+    },
+    {
+      "id": 4, "type": "stat", "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "title": "VPN — Disponibilidade 1h",
+      "options": { "reduceOptions": { "calcs": ["mean"] }, "colorMode": "background" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "color": "red",    "value": null },
+              { "color": "yellow", "value": 0.9  },
+              { "color": "green",  "value": 0.99 }
+            ]
+          }
+        }
+      },
+      "targets": [{
+        "expr": "avg_over_time(probe_success{job="blackbox-ping-azure"}[1h])",
+        "legendFormat": "VPN Uptime"
+      }],
+      "datasource": "Prometheus"
+    },
+    {
+      "id": 10, "type": "timeseries", "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "title": "CPU — Todas as Instâncias (%)",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "targets": [{
+        "expr": "100 - (avg by(instance, cloud) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100)",
+        "legendFormat": "{{instance}} ({{cloud}})"
+      }],
+      "datasource": "Prometheus"
+    },
+    {
+      "id": 11, "type": "timeseries", "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "title": "Memória Usada — Todas as Instâncias (%)",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "targets": [{
+        "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+        "legendFormat": "{{instance}} ({{cloud}})"
+      }],
+      "datasource": "Prometheus"
+    },
+    {
+      "id": 20, "type": "timeseries", "gridPos": { "x": 0, "y": 12, "w": 24, "h": 8 },
+      "title": "Latência VPN AWS → Azure (ms) — Histórico",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "lineWidth": 2, "fillOpacity": 20 },
+          "color": { "mode": "fixed", "fixedColor": "blue" }
+        }
+      },
+      "targets": [{
+        "expr": "probe_duration_seconds{job="blackbox-ping-azure"} * 1000",
+        "legendFormat": "RTT VPN (ms)"
+      }],
+      "datasource": "Prometheus"
+    },
+    {
+      "id": 30, "type": "table", "gridPos": { "x": 0, "y": 20, "w": 24, "h": 8 },
+      "title": "Status de Todos os Targets",
+      "options": { "sortBy": [{ "displayName": "Cloud", "desc": false }] },
+      "targets": [{
+        "expr": "up",
+        "legendFormat": "{{instance}} ({{job}})",
+        "instant": true
+      }],
+      "datasource": "Prometheus",
+      "transformations": [
+        { "id": "labelsToFields", "options": {} },
+        { "id": "organize", "options": {
+          "renameByName": { "instance": "Instância", "job": "Job", "cloud": "Cloud", "Value": "Status" }
+        }}
+      ]
+    }
+  ]
+}

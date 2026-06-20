@@ -1,0 +1,39 @@
+# =============================================================================
+# docker-compose.yml — Deploy local ou nas VMs
+# Uso:
+#   docker-compose up -d          → sobe o backend
+#   docker-compose logs -f        → acompanhar logs
+#   docker-compose down           → para e remove containers
+# =============================================================================
+version: "3.9"
+
+services:
+  backend:
+    build: .
+    container_name: multicloud-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    # Necessário para ping funcionar dentro do container
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.ping_group_range=0 2147483647
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/status/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Opcional: Nginx como reverse proxy
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/conf.d/default.conf
+  #   depends_on:
+  #     - backend

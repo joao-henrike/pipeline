@@ -1,4 +1,52 @@
-keys/
-*.pem
-.terraform/
-.terraform.lock.hcl
+# =============================================================================
+# .GITIGNORE — Multi-Cloud VPN Project
+# =============================================================================
+
+# ── Terraform (contém IPs, senhas, IDs de recursos)
+**/.terraform/
+**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+infrastructure/.deploy_state
+
+# ── Chaves SSH (NUNCA commitar chaves privadas)
+**/keys/*.pem
+**/keys/*.pub
+
+# ── Variáveis com dados sensíveis
+**/terraform.tfvars
+# Commitar apenas os exemplos:
+!**/terraform.tfvars.example
+
+# ── Backend Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+
+# ── Variáveis de ambiente do backend (contêm credenciais)
+backend/.env
+# Commitar apenas o exemplo:
+!backend/.env.example
+
+# ── Docker
+backend/.dockerignore
+
+# ── OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db
+
+# ── Logs e temporários
+*.log
+*.tmp
+/tmp/

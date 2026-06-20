@@ -1,0 +1,129 @@
+# =============================================================================
+# PROMETHEUS CONFIG — prometheus.yml
+# IPs dos targets são substituídos pelo userdata.sh no momento do deploy:
+#   BACKEND_IP  → IP privado da EC2 Backend
+#   FRONTEND_IP → IP privado da EC2 Frontend
+#   AZURE_VM_IP → IP privado da VM Azure (via VPN)
+# =============================================================================
+
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+  scrape_timeout:      10s
+  external_labels:
+    cluster:     multicloud-vpn
+    environment: dev
+
+# Alertmanager
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+# Rules de alerta
+rule_files:
+  - "/etc/prometheus/rules/*.yml"
+
+# ══ TARGETS DE SCRAPE ═══════════════════════════════════════════
+
+scrape_configs:
+
+  # ── Prometheus auto-monitor
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+        labels:
+          instance: "prometheus-server"
+          cloud:    "aws"
+
+  # ── Node Exporter — host de monitoramento
+  - job_name: "node-monitoring"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+        labels:
+          instance: "ec2-monitoring"
+          cloud:    "aws"
+          role:     "monitoring"
+
+  # ── cAdvisor — containers do host de monitoramento
+  - job_name: "cadvisor"
+    static_configs:
+      - targets: ["cadvisor:8080"]
+        labels:
+          instance: "ec2-monitoring"
+          cloud:    "aws"
+
+  # ── EC2 Backend — node_exporter (instalado pelo userdata)
+  - job_name: "node-backend-aws"
+    static_configs:
+      - targets: ["BACKEND_IP:9100"]
+        labels:
+          instance: "ec2-backend"
+          cloud:    "aws"
+          role:     "backend"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label:  instance
+
+  # ── EC2 Backend — FastAPI métricas customizadas
+  - job_name: "fastapi-backend-aws"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["BACKEND_IP:8000"]
+        labels:
+          instance: "ec2-backend-api"
+          cloud:    "aws"
+          role:     "backend"
+
+  # ── EC2 Frontend — node_exporter
+  - job_name: "node-frontend-aws"
+    static_configs:
+      - targets: ["FRONTEND_IP:9100"]
+        labels:
+          instance: "ec2-frontend"
+          cloud:    "aws"
+          role:     "frontend"
+
+  # ── Azure VM — node_exporter (via VPN site-to-site)
+  # O VPN deve estar ativo para este target funcionar
+  - job_name: "node-vm-azure"
+    static_configs:
+      - targets: ["AZURE_VM_IP:9100"]
+        labels:
+          instance: "vm-azure"
+          cloud:    "azure"
+          role:     "backend"
+    # Timeout maior pois vai via VPN
+    scrape_timeout: 20s
+
+  # ── Azure VM — FastAPI métricas
+  - job_name: "fastapi-backend-azure"
+    metrics_path: "/metrics"
+    scrape_timeout: 20s
+    static_configs:
+      - targets: ["AZURE_VM_IP:8000"]
+        labels:
+          instance: "vm-azure-api"
+          cloud:    "azure"
+          role:     "backend"
+
+  # ── Blackbox Exporter — testa conectividade HTTP e ICMP via VPN
+  # (Usado para medir latência e disponibilidade cross-cloud)
+  - job_name: "blackbox-ping-azure"
+    metrics_path: /probe
+    params:
+      module: [icmp]
+    static_configs:
+      - targets:
+          - "AZURE_VM_IP"
+        labels:
+          instance: "azure-vm-ping"
+          cloud:    "azure"
+          type:     "vpn-connectivity"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label:  __param_target
+      - source_labels: [__param_target]
+        target_label:  instance
+      - target_label:  __address__
+        replacement:   "localhost:9115"  # blackbox exporter

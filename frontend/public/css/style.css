@@ -1,0 +1,249 @@
+/* ════════════════════════════════════════════════════════════
+   MultiCloud VPN Monitor — Stylesheet
+   Dark theme com acentos AWS (laranja) e Azure (azul)
+   ════════════════════════════════════════════════════════════ */
+
+:root {
+  --bg:          #0d1117;
+  --bg-card:     #161b22;
+  --bg-card2:    #1c2128;
+  --bg-input:    #0d1117;
+  --border:      #30363d;
+  --text:        #e6edf3;
+  --muted:       #7d8590;
+  --aws:         #ff9900;
+  --aws-dim:     rgba(255,153,0,.15);
+  --azure:       #0078d4;
+  --azure-dim:   rgba(0,120,212,.15);
+  --green:       #3fb950;
+  --green-dim:   rgba(63,185,80,.15);
+  --red:         #f85149;
+  --red-dim:     rgba(248,81,73,.15);
+  --yellow:      #d29922;
+  --yellow-dim:  rgba(210,153,34,.15);
+  --purple:      #bc8cff;
+  --radius:      8px;
+  --radius-lg:   14px;
+  --shadow:      0 4px 32px rgba(0,0,0,.5);
+  --transition:  .2s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  min-height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+               Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+.header {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+  backdrop-filter: blur(8px);
+}
+.header-logo { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; }
+.header-logo span { font-size: 22px; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.refresh-timer { font-size: 12px; color: var(--muted); }
+
+/* ── LAYOUT ─────────────────────────────────────────────── */
+main { max-width: 1280px; margin: 0 auto; padding: 24px; }
+.section-gap { margin-top: 28px; }
+
+/* ── SECTION TITLE ──────────────────────────────────────── */
+.section-title {
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px;
+}
+.section-title::before {
+  content: ""; display: block;
+  width: 3px; height: 16px;
+  background: linear-gradient(to bottom, var(--aws), var(--azure));
+  border-radius: 2px;
+}
+
+/* ── CARDS ──────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+  transition: border-color var(--transition);
+}
+.card:hover { border-color: #484f58; }
+
+/* ── GRID ───────────────────────────────────────────────── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+/* ── STAT BOX ───────────────────────────────────────────── */
+.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.stat-box {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 20px; text-align: center;
+}
+.stat-box .label { font-size: 11px; text-transform: uppercase;
+                   letter-spacing: .6px; color: var(--muted); margin-bottom: 8px; }
+.stat-box .value { font-size: 18px; font-weight: 700; }
+
+/* ── BADGES ─────────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+}
+.badge.up      { background: var(--green-dim);  color: var(--green); }
+.badge.down    { background: var(--red-dim);    color: var(--red); }
+.badge.unknown { background: var(--yellow-dim); color: var(--yellow); }
+.badge.pending { background: rgba(88,166,255,.12); color: #58a6ff; }
+
+.dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dot.up      { background: var(--green); animation: pulse 2s infinite; }
+.dot.down    { background: var(--red); }
+.dot.unknown { background: var(--yellow); }
+.dot.pending { background: #58a6ff; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+/* ── CLOUD CARDS ────────────────────────────────────────── */
+.cloud-card { border-radius: var(--radius-lg); padding: 20px 24px; }
+.aws-card   { background: linear-gradient(140deg, rgba(255,153,0,.06) 0%, var(--bg-card) 55%);
+              border: 1px solid rgba(255,153,0,.3); }
+.azure-card { background: linear-gradient(140deg, rgba(0,120,212,.06) 0%, var(--bg-card) 55%);
+              border: 1px solid rgba(0,120,212,.3); }
+
+.cloud-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.cloud-title  { font-size: 18px; font-weight: 800; }
+.aws-title    { color: var(--aws); }
+.azure-title  { color: var(--azure); }
+
+.info-row { display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 0; border-bottom: 1px solid var(--border); }
+.info-row:last-child { border-bottom: none; }
+.info-label { color: var(--muted); font-size: 12px; }
+.info-value { font-family: "SF Mono","Fira Code","Cascadia Code",monospace; font-size: 12px; }
+
+/* ── TOPOLOGY ───────────────────────────────────────────── */
+.topology-wrap {
+  background: var(--bg-card2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 24px; text-align: center;
+}
+.topology-diagram { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; }
+.topo-cloud {
+  background: var(--bg-card); border-radius: var(--radius);
+  padding: 14px 22px; font-weight: 700; font-size: 13px;
+  min-width: 130px;
+}
+.topo-cloud.aws   { border: 2px solid rgba(255,153,0,.5); color: var(--aws); }
+.topo-cloud.azure { border: 2px solid rgba(0,120,212,.5); color: var(--azure); }
+.topo-cloud .ip   { font-size: 11px; font-weight: 400; font-family: monospace;
+                    color: var(--muted); margin-top: 4px; }
+
+.topo-tunnel {
+  flex: 1; max-width: 280px; min-width: 120px;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 8px; gap: 4px;
+}
+.tunnel-line {
+  width: 100%; height: 3px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--aws), var(--green), var(--azure));
+  position: relative;
+}
+.tunnel-line.inactive { background: var(--red); }
+.tunnel-line.pending  { background: var(--yellow); }
+.tunnel-meta { font-size: 10px; color: var(--muted); }
+
+/* ── PING / CONTROLS ────────────────────────────────────── */
+.controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.input-field {
+  flex: 1; min-width: 150px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text);
+  padding: 8px 12px; font-size: 13px; font-family: monospace;
+}
+.input-field:focus { outline: none; border-color: var(--azure); box-shadow: 0 0 0 3px var(--azure-dim); }
+.input-sm { max-width: 80px; }
+
+.btn {
+  padding: 8px 18px; border: none; border-radius: var(--radius);
+  cursor: pointer; font-size: 13px; font-weight: 600;
+  transition: opacity var(--transition), transform .1s;
+  white-space: nowrap;
+}
+.btn:active  { transform: scale(.96); }
+.btn:disabled{ opacity: .45; cursor: not-allowed; }
+.btn-aws     { background: var(--aws);   color: #000; }
+.btn-azure   { background: var(--azure); color: #fff; }
+.btn-gray    { background: var(--bg-card2); color: var(--text); border: 1px solid var(--border); }
+.btn-red     { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+
+/* ── LOG OUTPUT ─────────────────────────────────────────── */
+.log-box {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  font-family: "SF Mono","Fira Code",monospace; font-size: 12px;
+  line-height: 1.8; max-height: 260px; overflow-y: auto;
+  white-space: pre-wrap; word-break: break-word;
+}
+.log-ok   { color: var(--green); }
+.log-fail { color: var(--red); }
+.log-info { color: var(--muted); }
+.log-ts   { color: #58a6ff; }
+
+/* ── SPARKLINE ──────────────────────────────────────────── */
+.sparkline-wrap { margin-top: 14px; }
+.sparkline-label{ font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+.sparkline { display: flex; align-items: flex-end; gap: 3px; height: 48px; }
+.spark-bar { flex: 1; min-width: 5px; border-radius: 2px 2px 0 0; transition: height .3s; }
+
+/* ── MONITORING LINKS ───────────────────────────────────── */
+.monitor-link {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-card2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 16px;
+  text-decoration: none; color: var(--text);
+  transition: border-color var(--transition), background var(--transition);
+}
+.monitor-link:hover { border-color: #484f58; background: #1c2128; }
+.monitor-icon { font-size: 22px; }
+.monitor-info .name  { font-weight: 700; font-size: 14px; }
+.monitor-info .desc  { font-size: 12px; color: var(--muted); }
+.monitor-status { margin-left: auto; }
+
+/* ── TABS ───────────────────────────────────────────────── */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+.tab  {
+  padding: 8px 16px; background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 13px; font-weight: 600;
+  border-bottom: 2px solid transparent; transition: color var(--transition);
+}
+.tab.active      { color: var(--text);  border-bottom-color: var(--azure); }
+.tab-panel       { display: none; }
+.tab-panel.active{ display: block; }
+
+/* ── LOADER ─────────────────────────────────────────────── */
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border); border-top-color: var(--azure);
+  border-radius: 50%; animation: spin .7s linear infinite; display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .grid-2, .grid-3, .grid-4, .stat-row { grid-template-columns: 1fr; }
+  .topology-diagram { flex-direction: column; }
+  .topo-tunnel { max-width: 100%; padding: 8px 0; }
+  .tunnel-line { width: 3px; height: 60px; margin: 0 auto; }
+}

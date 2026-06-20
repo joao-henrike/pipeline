@@ -1,0 +1,40 @@
+# =============================================================================
+# EXEMPLO: infrastructure/azure/terraform.tfvars
+# Copie este arquivo: cp terraform.tfvars.example terraform.tfvars
+# Preencha todos os valores antes do terraform apply
+# =============================================================================
+
+# OBRIGATÓRIO — obtenha com: az account show --query id --output tsv
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# OBRIGATÓRIO — mesmo nome do aws/terraform.tfvars
+student_name = "SeuNome"
+
+# Região e ambiente
+location    = "eastus"
+environment = "dev"
+
+# Rede Azure (NÃO deve sobrepor o CIDR AWS 10.0.0.0/16)
+azure_vnet_cidr           = "10.1.0.0/16"
+azure_gateway_subnet_cidr = "10.1.0.0/27"   # OBRIGATÓRIO /27 ou maior para VPN GW
+azure_private_subnet_cidr = "10.1.1.0/24"
+
+# SEGURANÇA: restrinja para seu IP em produção — ex: ["203.0.113.10/32"]
+admin_ip_cidrs = ["0.0.0.0/0"]
+admin_username = "azureuser"
+
+# Rede AWS (deve coincidir com aws/terraform.tfvars)
+aws_vpc_cidr = "10.0.0.0/16"
+
+# Preenchido automaticamente pelo deploy.sh após Fase 2 (AWS)
+# Não altere manualmente — deixe null até o deploy.sh preencher
+aws_tunnel1_ip        = null
+aws_tunnel2_ip        = null
+create_vpn_connection = false
+
+# VPN — USE O MESMO PSK do aws/terraform.tfvars!
+vpn_shared_key = "MultiCloudVPN@2024!"  # DEVE SER IDÊNTICO ao do AWS
+
+# VM Azure
+vm_size         = "Standard_B1s"  # custo ~$8/mês
+vpn_gateway_sku = "VpnGw1"       # OBRIGATÓRIO para IKEv2 com AWS (~$140/mês)

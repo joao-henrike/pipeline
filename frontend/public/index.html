@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MultiCloud VPN Monitor</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <!-- BACKEND_URL é injetado pelo Nginx/Terraform quando servido do S3 -->
+  <script>window.BACKEND_URL = window.BACKEND_URL || "";</script>
+</head>
+<body>
+
+<!-- ── HEADER ──────────────────────────────────────────── -->
+<header class="header">
+  <div class="header-logo">
+    <span>🌐</span> MultiCloud VPN Monitor
+  </div>
+  <div class="header-right">
+    <span class="refresh-timer" id="refresh-countdown">Carregando...</span>
+    <span class="refresh-timer" id="last-refresh"></span>
+    <button class="btn btn-gray" id="btn-refresh">↻</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── BARRA DE STATUS ──────────────────────────────── -->
+  <div class="stat-row">
+    <div class="stat-box">
+      <div class="label">Sistema</div>
+      <div class="value" id="stat-overall">—</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">VPN Tunnel</div>
+      <div class="value" id="stat-vpn">—</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">Ping Cross-Cloud</div>
+      <div class="value" id="stat-ping">—</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">AWS VM</div>
+      <div class="value" id="stat-aws-vm">—</div>
+    </div>
+  </div>
+
+  <!-- ── TABS ─────────────────────────────────────────── -->
+  <div class="tabs">
+    <button class="tab active" data-tab="overview">Visão Geral</button>
+    <button class="tab" data-tab="connectivity">Conectividade</button>
+    <button class="tab" data-tab="monitoring">Monitoramento</button>
+  </div>
+
+  <!-- ── TAB: VISÃO GERAL ─────────────────────────────── -->
+  <div class="tab-panel active" id="panel-overview">
+
+    <!-- Cloud Cards -->
+    <div class="grid-2">
+
+      <div class="cloud-card aws-card">
+        <div class="cloud-header">
+          <span class="cloud-title aws-title">⬡ AWS</span>
+          <span id="aws-vm-badge">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">EC2 Private IP</span>
+          <span class="info-value" id="aws-private-ip">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Região</span>
+          <span class="info-value" id="aws-region">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Instância</span>
+          <span class="info-value" id="aws-type">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">OS</span>
+          <span class="info-value" id="aws-os">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Uptime</span>
+          <span class="info-value" id="aws-uptime">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">VPN Connection</span>
+          <span class="info-value" id="vpn-aws-conn">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Túneis Ativos</span>
+          <span class="info-value" id="vpn-aws-tunnels">—</span>
+        </div>
+      </div>
+
+      <div class="cloud-card azure-card">
+        <div class="cloud-header">
+          <span class="cloud-title azure-title">⬡ Azure</span>
+          <span id="az-vm-badge">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">VM Private IP</span>
+          <span class="info-value" id="az-private-ip">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Location</span>
+          <span class="info-value" id="az-location">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Tamanho</span>
+          <span class="info-value" id="az-type">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">OS</span>
+          <span class="info-value" id="az-os">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">VPN Connection</span>
+          <span class="info-value" id="vpn-az-conn">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Status</span>
+          <span class="info-value" id="vpn-az-status">—</span>
+        </div>
+      </div>
+
+    </div><!-- /grid-2 -->
+
+    <!-- Diagrama de Topologia VPN -->
+    <div class="section-gap">
+      <div class="section-title">Topologia VPN Site-to-Site</div>
+      <div class="topology-wrap">
+        <div class="topology-diagram">
+          <div class="topo-cloud aws">
+            AWS EC2<br>
+            <div class="ip" id="topo-aws-ip">10.0.1.x</div>
+          </div>
+          <div class="topo-tunnel">
+            <div class="tunnel-meta">IKEv2 · AES-256 · Túnel 1</div>
+            <div class="tunnel-line" id="tunnel-line"></div>
+            <div class="tunnel-meta">169.254.21.0/30</div>
+          </div>
+          <div class="topo-cloud azure">
+            Azure VM<br>
+            <div class="ip" id="topo-azure-ip">10.1.1.x</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;font-size:11px;color:var(--muted)">
+          AWS VPC 10.0.0.0/16 ↔ Azure VNet 10.1.0.0/16 &nbsp;·&nbsp;
+          IPsec IKEv2 · AES-256-CBC · SHA-256 · DH Group 2
+        </div>
+      </div>
+    </div>
+
+    <!-- Info do aluno -->
+    <div class="section-gap" style="text-align:center;color:var(--muted);font-size:12px;padding:12px 0">
+      <span id="stat-student">—</span>
+    </div>
+
+  </div><!-- /panel-overview -->
+
+  <!-- ── TAB: CONECTIVIDADE ─────────────────────────────── -->
+  <div class="tab-panel" id="panel-connectivity">
+
+    <!-- Ping -->
+    <div class="section-title">Ping ICMP</div>
+    <div class="card">
+      <div class="controls">
+        <input class="input-field" id="ping-target" type="text" placeholder="IP alvo (ex: 10.1.1.10)" />
+        <input class="input-field input-sm" id="ping-count" type="number" value="4" min="1" max="20" />
+        <button class="btn btn-aws" id="btn-ping">▶ Ping</button>
+        <button class="btn btn-azure" id="btn-ping-peer">▶ Ping Peer Auto</button>
+        <button class="btn btn-gray" id="btn-clear-log">Limpar</button>
+      </div>
+      <div class="log-box" id="log-box"><span class="log-info">Aguardando teste...\nUse "Ping Peer Auto" para testar a VPN automaticamente.\n</span></div>
+      <div class="sparkline-wrap">
+        <div class="sparkline-label">Latência (ms) — últimas 12 medições</div>
+        <div class="sparkline" id="sparkline"></div>
+      </div>
+    </div>
+
+    <!-- Traceroute -->
+    <div class="section-title section-gap">Traceroute</div>
+    <div class="card">
+      <div class="controls">
+        <input class="input-field" id="trace-target" type="text" placeholder="IP alvo (ex: 10.1.1.10)" />
+        <button class="btn btn-azure" id="btn-trace">▶ Traceroute</button>
+      </div>
+      <pre class="log-box" id="trace-output" style="color:var(--muted)">Aguardando traceroute...</pre>
+    </div>
+
+    <!-- Verificação de Porta -->
+    <div class="section-title section-gap">Verificação de Porta TCP</div>
+    <div class="card">
+      <div class="controls">
+        <input class="input-field" id="port-ip"  type="text" placeholder="IP alvo" />
+        <input class="input-field input-sm" id="port-num" type="text" placeholder="Porta" />
+        <button class="btn btn-gray" id="btn-port">▶ Verificar</button>
+      </div>
+      <div id="port-result" style="margin-top:10px;font-family:monospace;font-size:13px;color:var(--muted)">
+        Aguardando...
+      </div>
+    </div>
+
+  </div><!-- /panel-connectivity -->
+
+  <!-- ── TAB: MONITORAMENTO ─────────────────────────────── -->
+  <div class="tab-panel" id="panel-monitoring">
+    <div class="section-title">Ferramentas de Monitoramento</div>
+    <div class="grid-2">
+
+      <a class="monitor-link" id="link-grafana" href="#" target="_blank">
+        <span class="monitor-icon">📊</span>
+        <div class="monitor-info">
+          <div class="name">Grafana</div>
+          <div class="desc">Dashboards de métricas e alertas</div>
+        </div>
+        <div class="monitor-status"><span class="badge unknown">Verificando</span></div>
+      </a>
+
+      <a class="monitor-link" id="link-prometheus" href="#" target="_blank">
+        <span class="monitor-icon">🔥</span>
+        <div class="monitor-info">
+          <div class="name">Prometheus</div>
+          <div class="desc">Coleta e storage de métricas</div>
+        </div>
+        <div class="monitor-status"><span class="badge unknown">Verificando</span></div>
+      </a>
+
+    </div>
+
+    <div class="section-gap">
+      <div class="section-title">Métricas Rápidas</div>
+      <div class="card">
+        <div style="color:var(--muted);font-size:13px;line-height:1.8">
+          <p>Para visualizar os dashboards completos, acesse o Grafana na porta <code>3000</code> da EC2 de monitoramento.</p>
+          <br>
+          <p><strong>Credenciais padrão Grafana:</strong> admin / <code>MultiCloudVPN@2024!</code></p>
+          <br>
+          <p><strong>Dashboards disponíveis:</strong></p>
+          <ul style="margin-left:20px;margin-top:8px">
+            <li>MultiCloud VPN — Visão Geral</li>
+            <li>AWS EC2 — Métricas de Sistema</li>
+            <li>Azure VM — Métricas de Sistema</li>
+            <li>VPN Tunnel — Latência e Disponibilidade</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div><!-- /panel-monitoring -->
+
+</main>
+
+<script src="/js/api.js"></script>
+<script src="/js/app.js"></script>
+<script>
+  // Configurar links de monitoramento dinamicamente
+  // (Injetados pelo Nginx ou configurados pelo usuário)
+  const monitoringHost = window.MONITORING_HOST || location.hostname;
+  const grafanaEl  = document.getElementById("link-grafana");
+  const prometEl   = document.getElementById("link-prometheus");
+  if (grafanaEl)  grafanaEl.href  = `http://${monitoringHost}:3000`;
+  if (prometEl)   prometEl.href   = `http://${monitoringHost}:9090`;
+</script>
+</body>
+</html>

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MultiCloud VPN Monitor</title>
+  <style>
+    /* ── RESET & BASE ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-dark:     #0d1117;
+      --bg-card:     #161b22;
+      --bg-card2:    #1c2128;
+      --border:      #30363d;
+      --text:        #e6edf3;
+      --text-muted:  #7d8590;
+      --aws:         #ff9900;
+      --aws-dim:     #7a4a00;
+      --azure:       #0078d4;
+      --azure-dim:   #003d6b;
+      --green:       #3fb950;
+      --green-dim:   #1a4d24;
+      --red:         #f85149;
+      --red-dim:     #5c1c1a;
+      --yellow:      #d29922;
+      --yellow-dim:  #5c4400;
+      --purple:      #bc8cff;
+      --radius:      8px;
+      --radius-lg:   12px;
+      --shadow:      0 4px 24px rgba(0,0,0,.4);
+    }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont,
+      "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+      background: var(--bg-dark); color: var(--text); font-size: 14px; }
+
+    /* ── HEADER ────────────────────────────────────────────────── */
+    header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; }
+    .logo-icon { font-size: 22px; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .refresh-info { color: var(--text-muted); font-size: 12px; }
+
+    /* ── LAYOUT ────────────────────────────────────────────────── */
+    main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+    /* ── CARDS ─────────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    /* ── STATUS BADGE ──────────────────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge.up     { background: var(--green-dim);  color: var(--green); }
+    .badge.down   { background: var(--red-dim);    color: var(--red); }
+    .badge.unknown{ background: var(--yellow-dim); color: var(--yellow); }
+    .badge.pending{ background: #1a2a3a;           color: #58a6ff; }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .dot.up      { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
+    .dot.down    { background: var(--red); }
+    .dot.unknown { background: var(--yellow); }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+
+    /* ── GRID ──────────────────────────────────────────────────── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+    /* ── STATUS ROW ────────────────────────────────────────────── */
+    .status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-box .label { color: var(--text-muted); font-size: 11px; text-transform: uppercase; margin-bottom: 8px; }
+    .stat-box .value { font-size: 20px; font-weight: 700; }
+
+    /* ── CLOUD CARDS ───────────────────────────────────────────── */
+    .cloud-card {
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+    }
+    .aws-card   { background: linear-gradient(135deg, #1a1200 0%, var(--bg-card) 60%);
+                  border: 1px solid var(--aws-dim); }
+    .azure-card { background: linear-gradient(135deg, #001428 0%, var(--bg-card) 60%);
+                  border: 1px solid var(--azure-dim); }
+    .cloud-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .cloud-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 18px; font-weight: 700;
+    }
+    .aws-logo   { color: var(--aws); }
+    .azure-logo { color: var(--azure); }
+    .cloud-logo svg { width: 32px; height: 32px; }
+    .info-row { display: flex; justify-content: space-between; align-items: center;
+                padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--text-muted); font-size: 12px; }
+    .info-value { font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; }
+
+    /* ── VPN DIAGRAM ───────────────────────────────────────────── */
+    .vpn-diagram {
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+      margin-top: 24px;
+    }
+    .tunnel-viz {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 16px 0;
+      font-size: 13px;
+    }
+    .cloud-box {
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      font-weight: 600;
+    }
+    .cloud-box.aws   { background: var(--aws-dim);   color: var(--aws); }
+    .cloud-box.azure { background: var(--azure-dim); color: var(--azure); }
+    .tunnel-line {
+      flex: 1;
+      height: 2px;
+      background: linear-gradient(90deg, var(--aws), var(--green), var(--azure));
+      position: relative;
+      max-width: 300px;
+      margin: 0 8px;
+    }
+    .tunnel-line.down { background: var(--red); }
+    .tunnel-label {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--bg-card2);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* ── PING PANEL ────────────────────────────────────────────── */
+    .section-title {
+      font-size: 15px; font-weight: 600;
+      margin: 28px 0 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::before {
+      content: ''; display: block;
+      width: 3px; height: 18px;
+      background: var(--purple);
+      border-radius: 2px;
+    }
+    .ping-controls {
+      display: flex; gap: 10px; align-items: center;
+      margin-bottom: 14px; flex-wrap: wrap;
+    }
+    input[type=text] {
+      flex: 1; min-width: 160px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: monospace;
+    }
+    input[type=text]:focus { outline: none; border-color: var(--azure); }
+    button {
+      padding: 8px 18px;
+      border-radius: var(--radius);
+      border: none; cursor: pointer;
+      font-size: 13px; font-weight: 600;
+      transition: opacity .15s, transform .1s;
+    }
+    button:active { transform: scale(.97); }
+    .btn-aws   { background: var(--aws);   color: #000; }
+    .btn-azure { background: var(--azure); color: #fff; }
+    .btn-gray  { background: var(--bg-card2); color: var(--text);
+                 border: 1px solid var(--border); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── RESULTS LOG ───────────────────────────────────────────── */
+    .results-log {
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      max-height: 240px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .results-log .ok   { color: var(--green); }
+    .results-log .fail { color: var(--red); }
+    .results-log .info { color: var(--text-muted); }
+    .results-log .ts   { color: #58a6ff; }
+
+    /* ── LATENCY SPARKLINE ─────────────────────────────────────── */
+    .sparkline-wrap { margin-top: 14px; }
+    .sparkline-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .sparkline { display: flex; align-items: flex-end; gap: 3px; height: 48px; }
+    .spark-bar {
+      flex: 1; min-width: 6px;
+      background: var(--azure);
+      border-radius: 2px 2px 0 0;
+      transition: height .3s;
+    }
+
+    /* ── TRACEROUTE ────────────────────────────────────────────── */
+    .trace-output {
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.8;
+      max-height: 200px;
+      overflow-y: auto;
+      color: var(--text-muted);
+    }
+
+    /* ── RESPONSIVE ────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .grid-2, .grid-4, .status-grid { grid-template-columns: 1fr; }
+    }
+    .loader {
+      border: 3px solid var(--border);
+      border-top: 3px solid var(--azure);
+      border-radius: 50%;
+      width: 18px; height: 18px;
+      animation: spin .8s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-icon">🌐</span>
+    MultiCloud VPN Monitor
+  </div>
+  <div class="header-right">
+    <span class="refresh-info" id="lastRefresh">Carregando...</span>
+    <button class="btn-gray" onclick="loadAll()">↻ Atualizar</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── STATUS GERAL ──────────────────────────────────────────── -->
+  <div class="status-grid" id="statusGrid">
+    <div class="stat-box">
+      <div class="label">Sistema</div>
+      <div class="value" id="overallStatus">—</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">VPN Tunnel</div>
+      <div class="value" id="vpnStatus">—</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">Ping Cross-Cloud</div>
+      <div class="value" id="pingStatus">—</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">Aluno</div>
+      <div class="value" id="studentName" style="font-size:15px">—</div>
+    </div>
+  </div>
+
+  <!-- ── CLOUD CARDS ────────────────────────────────────────────── -->
+  <div class="grid-2">
+
+    <div class="cloud-card aws-card">
+      <div class="cloud-header">
+        <div class="cloud-logo aws-logo">
+          <svg viewBox="0 0 100 60" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <text x="0" y="45" font-size="40" font-weight="bold">AWS</text>
+          </svg>
+        </div>
+        <span class="badge unknown" id="awsVmBadge"><span class="dot unknown"></span>—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">EC2 Private IP</span>
+        <span class="info-value" id="awsPrivateIp">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Região</span>
+        <span class="info-value" id="awsRegion">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Tipo Instância</span>
+        <span class="info-value" id="awsInstanceType">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">VPN Connection</span>
+        <span class="info-value" id="awsVpnConn">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Túneis Ativos</span>
+        <span class="info-value" id="awsTunnels">—</span>
+      </div>
+    </div>
+
+    <div class="cloud-card azure-card">
+      <div class="cloud-header">
+        <div class="cloud-logo azure-logo">
+          <svg viewBox="0 0 110 60" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <text x="0" y="45" font-size="32" font-weight="bold">Azure</text>
+          </svg>
+        </div>
+        <span class="badge unknown" id="azureVmBadge"><span class="dot unknown"></span>—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">VM Private IP</span>
+        <span class="info-value" id="azurePrivateIp">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Location</span>
+        <span class="info-value" id="azureLocation">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Tamanho VM</span>
+        <span class="info-value" id="azureVmSize">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">VPN Connection</span>
+        <span class="info-value" id="azureVpnConn">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Status Conexão</span>
+        <span class="info-value" id="azureTunnels">—</span>
+      </div>
+    </div>
+
+  </div><!-- end grid-2 -->
+
+  <!-- ── DIAGRAMA VPN ───────────────────────────────────────────── -->
+  <div class="vpn-diagram">
+    <div class="card-title">Topologia VPN Site-to-Site</div>
+    <div class="tunnel-viz">
+      <div class="cloud-box aws">
+        AWS EC2<br>
+        <span id="topAwsIp" style="font-size:11px;font-weight:400">10.0.1.x</span>
+      </div>
+      <div class="tunnel-line" id="tunnelLine1">
+        <span class="tunnel-label">Túnel 1 · IKEv2 · AES256</span>
+      </div>
+      <div class="cloud-box azure">
+        Azure VM<br>
+        <span id="topAzIp" style="font-size:11px;font-weight:400">10.1.1.x</span>
+      </div>
+    </div>
+    <div class="tunnel-viz" style="margin-top:-8px">
+      <div class="cloud-box aws" style="opacity:.6">AWS VGW</div>
+      <div class="tunnel-line down" id="tunnelLine2">
+        <span class="tunnel-label">Túnel 2 · Redundância</span>
+      </div>
+      <div class="cloud-box azure" style="opacity:.6">Azure VPN GW</div>
+    </div>
+    <div style="margin-top:12px; font-size:11px; color:var(--text-muted)">
+      AWS VPC 10.0.0.0/16 ←→ Azure VNet 10.1.0.0/16 &nbsp;|&nbsp;
+      IPsec · IKEv2 · AES-256 · SHA-256 · DH Group 2
+    </div>
+  </div>
+
+  <!-- ── TESTE DE PING ──────────────────────────────────────────── -->
+  <div class="section-title">Teste de Conectividade Cross-Cloud</div>
+  <div class="card">
+    <div class="ping-controls">
+      <input type="text" id="pingTarget" placeholder="IP alvo (ex: 10.1.1.10)" />
+      <input type="text" id="pingCount"  placeholder="Pacotes" value="4" style="max-width:80px" />
+      <button class="btn-aws"   id="btnPingAws"   onclick="runPing()">
+        ▶ Ping
+      </button>
+      <button class="btn-azure" id="btnPingPeer"  onclick="runPingPeer()">
+        ▶ Ping Peer Auto
+      </button>
+      <button class="btn-gray"  onclick="clearLog()">Limpar</button>
+    </div>
+
+    <div class="results-log" id="pingLog">
+<span class="info">── Aguardando teste de ping... ──
+Use o botão "Ping Peer Auto" para testar a VPN com o IP já configurado.
+Ou digite o IP da outra cloud e clique em "Ping".</span>
+    </div>
+
+    <div class="sparkline-wrap">
+      <div class="sparkline-label">Latência (ms) — últimas 10 medições</div>
+      <div class="sparkline" id="sparkline">
+        <div class="spark-bar" style="height:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TRACEROUTE ─────────────────────────────────────────────── -->
+  <div class="section-title">Traceroute</div>
+  <div class="card">
+    <div class="ping-controls">
+      <input type="text" id="traceTarget" placeholder="IP alvo (ex: 10.1.1.10)" />
+      <button class="btn-azure" onclick="runTraceroute()">▶ Traceroute</button>
+    </div>
+    <div class="trace-output" id="traceOutput">
+Aguardando traceroute...
+    </div>
+  </div>
+
+  <!-- ── VERIFICAÇÃO DE PORTA ───────────────────────────────────── -->
+  <div class="section-title">Verificação de Porta TCP</div>
+  <div class="card">
+    <div class="ping-controls">
+      <input type="text" id="portIp"   placeholder="IP alvo (ex: 10.1.1.10)" />
+      <input type="text" id="portNum"  placeholder="Porta (ex: 22 ou 8000)" style="max-width:100px" />
+      <button class="btn-gray" onclick="checkPort()">▶ Verificar Porta</button>
+    </div>
+    <div id="portResult" style="margin-top:10px; font-family:monospace; font-size:13px; color:var(--text-muted)">
+      Aguardando...
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// MultiCloud VPN Monitor — Frontend JavaScript
+// ═══════════════════════════════════════════════════════════════
+
+const API = "";  // URL relativa — funciona quando backend serve o frontend direto
+let latencies = [];
+
+// ── Utilitários ─────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const ts = () => new Date().toLocaleTimeString("pt-BR");
+
+function statusClass(s) {
+  const m = { UP: "up", DOWN: "down", UNKNOWN: "unknown", PENDING: "pending" };
+  return m[(s||"").toUpperCase()] || "unknown";
+}
+
+function statusEmoji(s) {
+  const m = { UP: "🟢", DOWN: "🔴", UNKNOWN: "🟡", PENDING: "🔵" };
+  return m[(s||"").toUpperCase()] || "🟡";
+}
+
+function setBadge(elId, status, label) {
+  const el = $(elId);
+  if (!el) return;
+  const cls = statusClass(status);
+  el.className = `badge ${cls}`;
+  el.innerHTML = `<span class="dot ${cls}"></span>${label || status}`;
+}
+
+function setStatBadge(elId, status) {
+  const el = $(elId);
+  if (!el) return;
+  el.innerHTML = `<span class="badge ${statusClass(status)}" style="font-size:14px">
+    <span class="dot ${statusClass(status)}"></span>${statusEmoji(status)} ${status}
+  </span>`;
+}
+
+function log(msg, cls = "") {
+  const box = $("pingLog");
+  const line = document.createElement("span");
+  line.innerHTML = `<span class="ts">[${ts()}]</span> <span class="${cls}">${msg}</span>
+`;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
+function clearLog() {
+  $("pingLog").innerHTML = '<span class="info">── Log limpo ──
+</span>';
+}
+
+// ── Sparkline ──────────────────────────────────────────────────
+function updateSparkline(ms) {
+  if (ms == null) return;
+  latencies.push(ms);
+  if (latencies.length > 10) latencies.shift();
+
+  const max = Math.max(...latencies, 1);
+  const sl = $("sparkline");
+  sl.innerHTML = latencies.map(v => {
+    const pct = Math.max(4, (v / max) * 100);
+    const color = v < 10 ? "var(--green)" : v < 50 ? "var(--azure)" : "var(--yellow)";
+    return `<div class="spark-bar" style="height:${pct}%;background:${color}" title="${v.toFixed(1)}ms"></div>`;
+  }).join("");
+}
+
+// ── Carregar status geral ───────────────────────────────────────
+async function loadStatus() {
+  try {
+    const r = await fetch(`${API}/api/status/`);
+    const d = await r.json();
+    setStatBadge("overallStatus", d.overall);
+    setStatBadge("vpnStatus",     d.vpn_tunnel);
+    setStatBadge("pingStatus",    d.cross_cloud_ping);
+    $("studentName").textContent = d.student_name + " · " + d.cloud_running_on;
+    $("lastRefresh").textContent = `Atualizado: ${ts()}`;
+  } catch(e) {
+    $("lastRefresh").textContent = `Erro ao atualizar: ${e.message}`;
+  }
+}
+
+// ── Carregar info das VMs ───────────────────────────────────────
+async function loadCloudInfo() {
+  try {
+    const [awsR, azR] = await Promise.all([
+      fetch(`${API}/api/cloud/aws/vm`),
+      fetch(`${API}/api/cloud/azure/vm`),
+    ]);
+    const aws = await awsR.json();
+    const az  = await azR.json();
+
+    setBadge("awsVmBadge",   aws.state, aws.state);
+    $("awsPrivateIp").textContent    = aws.private_ip    || "—";
+    $("awsRegion").textContent       = aws.region_or_location || "—";
+    $("awsInstanceType").textContent = aws.instance_type || "—";
+    $("topAwsIp").textContent        = aws.private_ip    || "10.0.1.x";
+
+    setBadge("azureVmBadge", az.state, az.state);
+    $("azurePrivateIp").textContent  = az.private_ip     || "—";
+    $("azureLocation").textContent   = az.region_or_location || "—";
+    $("azureVmSize").textContent     = az.instance_type  || "—";
+    $("topAzIp").textContent         = az.private_ip     || "10.1.1.x";
+
+    // Preencher campos de ping com os IPs automaticamente
+    if (!$("pingTarget").value && az.private_ip)
+      $("pingTarget").value = az.private_ip;
+    if (!$("traceTarget").value && az.private_ip)
+      $("traceTarget").value = az.private_ip;
+    if (!$("portIp").value && az.private_ip)
+      $("portIp").value = az.private_ip;
+
+  } catch(e) { console.error("loadCloudInfo:", e); }
+}
+
+// ── Carregar info VPN ───────────────────────────────────────────
+async function loadVpnInfo() {
+  try {
+    const r = await fetch(`${API}/api/vpn/summary`);
+    const d = await r.json();
+
+    $("awsVpnConn").textContent  = d.aws.connection_id || "—";
+    $("awsTunnels").textContent  = `${d.aws.tunnels_up} / ${d.aws.total_tunnels} UP`;
+    $("azureVpnConn").textContent= d.azure.connection_id || "—";
+    $("azureTunnels").textContent= d.azure.overall_status;
+
+    // Colorir linhas do diagrama
+    const t1 = $("tunnelLine1");
+    if (d.vpn_active) {
+      t1.style.background = "linear-gradient(90deg, var(--aws), var(--green), var(--azure))";
+    } else {
+      t1.style.background = "var(--red)";
+    }
+  } catch(e) { console.error("loadVpnInfo:", e); }
+}
+
+// ── Ping ────────────────────────────────────────────────────────
+async function runPing() {
+  const target = $("pingTarget").value.trim();
+  const count  = parseInt($("pingCount").value) || 4;
+  if (!target) { log("⚠ Digite um IP alvo", "fail"); return; }
+
+  $("btnPingAws").disabled = true;
+  log(`Executando ping -c ${count} ${target} ...`, "info");
+
+  try {
+    const r = await fetch(`${API}/api/connectivity/ping`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target_ip: target, count }),
+    });
+    const d = await r.json();
+    const cls = d.status === "UP" ? "ok" : "fail";
+    log(`${d.status === "UP" ? "✓" : "✗"} ${target} — ` +
+        `${d.packets_received}/${d.packets_sent} pkts recebidos · ` +
+        `${d.packet_loss_pct}% perda · ` +
+        `latência avg: ${d.avg_latency_ms ? d.avg_latency_ms.toFixed(2)+"ms" : "N/A"}`,
+        cls);
+    if (d.raw_output) log(d.raw_output.trim(), "info");
+    updateSparkline(d.avg_latency_ms);
+  } catch(e) {
+    log(`Erro: ${e.message}`, "fail");
+  } finally {
+    $("btnPingAws").disabled = false;
+  }
+}
+
+async function runPingPeer() {
+  $("btnPingPeer").disabled = true;
+  log("Fazendo ping automático para a outra cloud (OTHER_CLOUD_IP)...", "info");
+  try {
+    const r = await fetch(`${API}/api/connectivity/ping/peer`);
+    const d = await r.json();
+    const cls = d.status === "UP" ? "ok" : "fail";
+    log(`${d.status === "UP" ? "✓ VPN ATIVA" : "✗ VPN INATIVA"} — ${d.target_ip} — ` +
+        `latência: ${d.avg_latency_ms ? d.avg_latency_ms.toFixed(2)+"ms" : "N/A"}`, cls);
+    updateSparkline(d.avg_latency_ms);
+  } catch(e) {
+    log(`Erro: ${e.message}`, "fail");
+  } finally {
+    $("btnPingPeer").disabled = false;
+  }
+}
+
+// ── Traceroute ──────────────────────────────────────────────────
+async function runTraceroute() {
+  const target = $("traceTarget").value.trim();
+  if (!target) return;
+  $("traceOutput").textContent = "Executando traceroute... (pode levar até 30s)";
+  try {
+    const r = await fetch(`${API}/api/connectivity/traceroute`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target_ip: target }),
+    });
+    const d = await r.json();
+    $("traceOutput").textContent = d.output || "Sem resultado";
+  } catch(e) {
+    $("traceOutput").textContent = `Erro: ${e.message}`;
+  }
+}
+
+// ── Port check ──────────────────────────────────────────────────
+async function checkPort() {
+  const ip   = $("portIp").value.trim();
+  const port = $("portNum").value.trim();
+  if (!ip || !port) return;
+  $("portResult").textContent = "Verificando...";
+  try {
+    const r = await fetch(`${API}/api/connectivity/port/${ip}/${port}`);
+    const d = await r.json();
+    $("portResult").style.color = d.open ? "var(--green)" : "var(--red)";
+    $("portResult").textContent = d.open
+      ? `✓ ${ip}:${port} está ACESSÍVEL via VPN`
+      : `✗ ${ip}:${port} NÃO acessível (VPN pode estar inativa ou porta fechada)`;
+  } catch(e) {
+    $("portResult").textContent = `Erro: ${e.message}`;
+  }
+}
+
+// ── Load all ────────────────────────────────────────────────────
+async function loadAll() {
+  await Promise.all([loadStatus(), loadCloudInfo(), loadVpnInfo()]);
+}
+
+// ── Inicializar e auto-refresh ───────────────────────────────────
+loadAll();
+setInterval(loadAll, 30000);  // atualiza a cada 30 segundos
+</script>
+</body>
+</html>

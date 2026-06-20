@@ -1,0 +1,104 @@
+# =============================================================================
+# ALERT RULES — alerts.yml
+# Alertas críticos para o ambiente Multi-Cloud VPN
+# =============================================================================
+groups:
+
+  # ── VPN e Conectividade Cross-Cloud
+  - name: vpn_connectivity
+    interval: 30s
+    rules:
+
+      - alert: AzureVMUnreachableViaVPN
+        expr: |
+          up{job="node-vm-azure"} == 0
+          OR
+          probe_success{job="blackbox-ping-azure"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          cloud:    azure
+        annotations:
+          summary:     "VM Azure inacessível via VPN"
+          description: >
+            A VM Azure ({{ $labels.instance }}) não está respondendo há mais de 2 minutos.
+            Isso pode indicar que o túnel VPN está inativo ou que a VM está desligada.
+            Verifique: AWS VPN Console → VPN Connections → Status dos túneis.
+
+      - alert: VPNTunnelHighLatency
+        expr: |
+          probe_duration_seconds{job="blackbox-ping-azure"} > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          cloud:    aws
+        annotations:
+          summary:     "Latência VPN alta (>100ms)"
+          description: >
+            A latência do túnel VPN para o Azure está acima de 100ms:
+            atual = {{ $value | humanizeDuration }}.
+            Isso pode indicar congestionamento na rede ou problemas no túnel.
+
+      - alert: BackendAPIDown
+        expr: |
+          up{job=~"fastapi-backend.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary:     "Backend FastAPI offline: {{ $labels.instance }}"
+          description: >
+            O backend FastAPI em {{ $labels.instance }} (cloud: {{ $labels.cloud }})
+            não está respondendo há mais de 1 minuto.
+            Verifique: systemctl status multicloud-backend
+
+  # ── Recursos de Sistema (CPU, memória, disco)
+  - name: system_resources
+    rules:
+
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by(instance, cloud) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary:     "CPU alta: {{ $labels.instance }} ({{ $labels.cloud }})"
+          description: >
+            CPU em {{ $labels.instance }} está em {{ $value | printf "%.1f" }}%
+            há mais de 10 minutos.
+
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary:     "Memória alta: {{ $labels.instance }}"
+          description: >
+            Uso de memória em {{ $labels.instance }} ({{ $labels.cloud }}) está
+            em {{ $value | printf "%.1f" }}%.
+
+      - alert: DiskSpaceRunningOut
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary:     "Disco baixo: {{ $labels.instance }}"
+          description: >
+            Apenas {{ $value | printf "%.1f" }}% de espaço livre em
+            {{ $labels.instance }} ({{ $labels.cloud }}).
+
+      - alert: InstanceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary:     "Instância offline: {{ $labels.instance }}"
+          description: >
+            {{ $labels.instance }} (job: {{ $labels.job }}, cloud: {{ $labels.cloud }})
+            está offline há mais de 2 minutos.
