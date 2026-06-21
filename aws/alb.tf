@@ -2,12 +2,12 @@
 # APPLICATION LOAD BALANCER
 # ==========================================
 resource "aws_lb" "main_alb" {
-  name               = "techstock-alb"
+  name               = "techstock-alb-v2"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.sg_alb.id]
   subnets            = [aws_subnet.public_subnet.id, aws_subnet.public_subnet_b.id]
-  tags               = { Name = "techstock-alb" }
+  tags               = { Name = "techstock-alb-v2" }
 }
 
 # ==========================================
