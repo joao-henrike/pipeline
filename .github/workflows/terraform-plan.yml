@@ -1,6 +1,6 @@
 # =============================================================================
 # WORKFLOW: Terraform Plan
-# Executa em todo Pull Request que altera infrastructure/
+# Executa em todo Pull Request que altera arquivos do terraform
 # Valida a sintaxe e gera o plan de ambas as clouds como comentário no PR.
 # =============================================================================
 name: Terraform Plan
@@ -9,7 +9,8 @@ on:
   pull_request:
     branches: [main, master]
     paths:
-      - "infrastructure/**"
+      - "aws/**"
+      - "azure/**"
       - ".github/workflows/terraform-plan.yml"
 
 permissions:
@@ -23,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: infrastructure/aws
+        working-directory: aws
 
     steps:
       - name: Checkout código
@@ -53,7 +54,10 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION:    us-east-1
         run: |
-          terraform plan -no-color             -var="student_name=${{ vars.STUDENT_NAME || 'ci-test' }}"             -var="vpn_shared_key=CITestKey1234"             -out=tfplan.aws 2>&1 | tee plan_aws.txt || true
+          terraform plan -no-color \
+            -var="student_name=${{ vars.STUDENT_NAME || 'ci-test' }}" \
+            -var="vpn_shared_key=CITestKey1234" \
+            -out=tfplan.aws 2>&1 | tee plan_aws.txt || true
           echo "## 📋 AWS Plan" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           tail -30 plan_aws.txt >> $GITHUB_STEP_SUMMARY
@@ -61,21 +65,18 @@ jobs:
 
       - name: Comentar Plan no PR (AWS)
         uses: actions/github-script@v7
-        if: github.event_name == "pull_request"
+        if: github.event_name == 'pull_request'
         with:
           script: |
             const fs = require("fs");
             let plan = "";
-            try { plan = fs.readFileSync("infrastructure/aws/plan_aws.txt", "utf8").slice(-3000); }
+            try { plan = fs.readFileSync("aws/plan_aws.txt", "utf8").slice(-3000); }
             catch { plan = "Plan não disponível"; }
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `### ☁️ AWS Terraform Plan
-\`\`\`hcl
-${plan}
-\`\`\``
+              body: `### ☁️ AWS Terraform Plan\n\`\`\`hcl\n${plan}\n\`\`\``
             });
 
   # ── Validação e Plan Azure
@@ -84,7 +85,7 @@ ${plan}
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: infrastructure/azure
+        working-directory: azure
 
     steps:
       - name: Checkout código
@@ -99,7 +100,7 @@ ${plan}
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-        continue-on-error: true  # Não falha se AZURE_CREDENTIALS não estiver configurado
+        continue-on-error: true
 
       - name: Terraform Init
         env:
