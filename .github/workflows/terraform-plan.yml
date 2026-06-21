@@ -143,7 +143,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: pip-${{ hashFiles("backend/requirements.txt") }}
+          # AQUI ESTA A CORRECAO: aspas simples dentro do bloco de expressao
+          key: pip-${{ hashFiles('backend/requirements.txt') }}
 
       - name: Instalar dependências
         run: pip install -r requirements.txt
