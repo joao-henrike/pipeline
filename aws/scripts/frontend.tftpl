@@ -1,0 +1,125 @@
+#!/bin/bash
+# =============================================================================
+# setup-frontend.tftpl — Adaptado para Cloud-Init (Ubuntu 22.04)
+# =============================================================================
+exec > >(tee /var/log/user-data-frontend.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+echo "============================================"
+echo " TechStock — Setup Frontend Automatizado"
+echo "============================================"
+
+WEBROOT="/var/www/html/techstock"
+NODE_EXPORTER_VERSION="1.7.0"
+
+echo "--- [1/5] Atualizando sistema e instalando Nginx (Ubuntu) ---"
+apt-get update -y
+apt-get install -y nginx wget curl jq
+
+echo "--- [2/5] Configurando Nginx ---"
+# O Ubuntu usa www-data como usuario padrao do Nginx
+cat > /etc/nginx/nginx.conf << 'NGXMAIN'
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+
+events { worker_connections 1024; }
+
+http {
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent';
+    access_log /var/log/nginx/access.log main;
+    sendfile on; tcp_nopush on; keepalive_timeout 65;
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    include /etc/nginx/conf.d/*.conf;
+}
+NGXMAIN
+
+echo "--- [3/5] Diretorio e arquivos (Mock Inicial) ---"
+mkdir -p $WEBROOT
+chown -R www-data:www-data $WEBROOT
+chmod -R 755 $WEBROOT
+
+# Como a aplicacao real dependera do seu repositorio GitHub, injetamos um mock
+# para garantir que o ALB receba resposta 200 OK no Health Check durante a criacao.
+cat > $WEBROOT/index.html << 'HTML'
+<!DOCTYPE html>
+<html>
+<head><title>TechStock Frontend</title></head>
+<body><h1>TechStock Frontend Operacional</h1></body>
+</html>
+HTML
+
+echo "--- [4/5] Injetando variaveis do Terraform ---"
+# O Terraform ira mapear o DNS real do ALB para a variavel abaixo
+cat > $WEBROOT/config.js << CFG
+// config.js — Injetado via Terraform
+window.TECHSTOCK_CONFIG = { apiUrl: 'http://${alb_dns}' };
+CFG
+
+chown -R www-data:www-data $WEBROOT/
+
+cat > /etc/nginx/conf.d/techstock.conf << 'NGINXCONF'
+server {
+    listen 80 default_server;
+    server_name _;
+    root /var/www/html/techstock;
+    index index.html;
+
+    location = /config.js {
+        add_header Cache-Control "no-store, no-cache, must-revalidate";
+        add_header Pragma "no-cache"; expires -1;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache";
+        add_header X-Frame-Options "SAMEORIGIN";
+    }
+
+    location = /health {
+        default_type application/json;
+        return 200 '{"ok":true,"service":"frontend-nginx"}';
+        add_header Content-Type application/json;
+    }
+
+    access_log /var/log/nginx/techstock-access.log;
+    error_log  /var/log/nginx/techstock-error.log;
+}
+NGINXCONF
+
+# Desabilita o site default do Ubuntu para nao dar conflito de porta 80
+rm -f /etc/nginx/sites-enabled/default
+
+systemctl enable nginx
+systemctl restart nginx
+
+echo "--- [5/5] Node Exporter ---"
+wget -q "https://github.com/prometheus/node_exporter/releases/download/v$NODE_EXPORTER_VERSION/node_exporter-$NODE_EXPORTER_VERSION.linux-amd64.tar.gz" -O /tmp/ne.tar.gz
+tar xzf /tmp/ne.tar.gz -C /tmp/
+cp /tmp/node_exporter-$NODE_EXPORTER_VERSION.linux-amd64/node_exporter /usr/local/bin/
+chmod +x /usr/local/bin/node_exporter
+
+cat > /etc/systemd/system/node_exporter.service << 'NE'
+[Unit]
+Description=Node Exporter
+After=network.target
+[Service]
+Type=simple
+User=nobody
+ExecStart=/usr/local/bin/node_exporter
+Restart=on-failure
+[Install]
+WantedBy=multi-user.target
+NE
+
+systemctl daemon-reload
+systemctl enable node_exporter
+systemctl start node_exporter
+
+# (Nota: Removi temporariamente a instalacao do amazon-cloudwatch-agent pois
+# as politicas IAM estritas do LabInstanceProfile do AWS Academy podem causar
+# falhas silenciosas na instalacao dele via user-data. O Node Exporter e suficiente
+# para alimentar o seu Grafana).
+
+echo "Setup Frontend Concluido com Sucesso!"
