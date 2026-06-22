@@ -91,7 +91,7 @@ resource "aws_s3_object" "index_html" {
   key    = "index.html"
 
   # templatefile injeta a URL do backend no HTML antes do upload
-  content      = templatefile("${path.module}/../../../../backend/templates/index.html.tpl", {
+  content = templatefile("${path.module}/../../../../backend/templates/index.html.tpl", {
     api_url      = var.backend_api_url
     student_name = var.student_name
   })

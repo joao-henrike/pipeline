@@ -35,7 +35,7 @@ resource "aws_instance" "monitoring" {
     volume_size           = 40
     delete_on_termination = true
     encrypted             = true
-    tags = { Name = "vol-monitoring-${var.student_name}" }
+    tags                  = { Name = "vol-monitoring-${var.student_name}" }
   }
 
   user_data = base64encode(templatefile("${path.module}/userdata.sh", {

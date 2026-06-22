@@ -35,7 +35,7 @@ resource "aws_instance" "frontend" {
     volume_size           = 20
     delete_on_termination = true
     encrypted             = true
-    tags = { Name = "vol-frontend-${var.student_name}" }
+    tags                  = { Name = "vol-frontend-${var.student_name}" }
   }
 
   user_data = base64encode(templatefile("${path.module}/userdata.sh", {

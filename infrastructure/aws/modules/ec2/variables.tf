@@ -1,7 +1,7 @@
-variable "private_subnet_id"     { type = string }
-variable "public_subnet_id"      { type = string }
-variable "ec2_sg_id"             { type = string }
-variable "bastion_sg_id"         { type = string }
+variable "private_subnet_id" { type = string }
+variable "public_subnet_id" { type = string }
+variable "ec2_sg_id" { type = string }
+variable "bastion_sg_id" { type = string }
 variable "ec2_instance_type" {
   type    = string
   default = "t2.micro"

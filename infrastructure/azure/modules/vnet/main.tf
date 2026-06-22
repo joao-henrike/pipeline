@@ -26,7 +26,7 @@ resource "azurerm_virtual_network" "main" {
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   address_space       = [var.azure_vnet_cidr]
-  tags = { Name = "vnet-multicloud-${var.student_name}" }
+  tags                = { Name = "vnet-multicloud-${var.student_name}" }
 }
 
 # Nome "GatewaySubnet" é OBRIGATÓRIO para VPN Gateway no Azure

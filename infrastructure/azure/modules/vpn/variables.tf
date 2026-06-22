@@ -1,7 +1,7 @@
-variable "location"             { type = string }
-variable "resource_group_name"  { type = string }
-variable "gateway_subnet_id"    { type = string }
-variable "aws_vpc_cidr"         { type = string }
+variable "location" { type = string }
+variable "resource_group_name" { type = string }
+variable "gateway_subnet_id" { type = string }
+variable "aws_vpc_cidr" { type = string }
 variable "aws_tunnel1_ip" {
   type    = string
   default = null

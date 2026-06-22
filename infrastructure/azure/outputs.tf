@@ -1,7 +1,7 @@
-output "resource_group_name"   { value = module.vnet.resource_group_name }
-output "vnet_id"               { value = module.vnet.vnet_id }
-output "vnet_cidr"             { value = var.azure_vnet_cidr }
-output "private_subnet_id"     { value = module.vnet.private_subnet_id }
+output "resource_group_name" { value = module.vnet.resource_group_name }
+output "vnet_id" { value = module.vnet.vnet_id }
+output "vnet_cidr" { value = var.azure_vnet_cidr }
+output "private_subnet_id" { value = module.vnet.private_subnet_id }
 
 output "vm_private_ip" {
   description = "IP privado da VM Azure — alvo do ping/SSH do AWS via VPN"

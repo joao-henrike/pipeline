@@ -1,6 +1,6 @@
-variable "public_subnet_id"   { type = string }
-variable "sg_id"              { type = string }
-variable "key_name"           { type = string }
+variable "public_subnet_id" { type = string }
+variable "sg_id" { type = string }
+variable "key_name" { type = string }
 variable "backend_private_ip" {
   description = "IP privado da EC2 backend — usado no proxy Nginx e no .env Node.js"
   type        = string

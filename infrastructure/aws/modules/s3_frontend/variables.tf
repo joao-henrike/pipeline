@@ -9,8 +9,8 @@ variable "backend_api_url" {
     Injetada no HTML do frontend antes do upload para o S3.
     O frontend JavaScript usa essa URL para chamar a API.
   EOT
-  type    = string
-  default = ""
+  type        = string
+  default     = ""
 }
 
 variable "aws_region" {

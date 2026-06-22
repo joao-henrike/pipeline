@@ -34,7 +34,7 @@ resource "aws_instance" "backend" {
     volume_size           = 30
     delete_on_termination = true
     encrypted             = true
-    tags = { Name = "vol-backend-${var.student_name}" }
+    tags                  = { Name = "vol-backend-${var.student_name}" }
   }
 
   user_data = base64encode(templatefile("${path.module}/userdata.sh", {
