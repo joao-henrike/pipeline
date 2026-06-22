@@ -181,7 +181,7 @@ for _ in range(12):
         time.sleep(5)
 
 for dash in DASHBOARDS:
-    url = f"${GITHUB_RAW_URL}/{dash}"
+    url = f"${github_raw_url}/{dash}"
     try:
         req = urllib.request.Request(url)
         with urllib.request.urlopen(req) as response:
