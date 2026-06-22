@@ -54,3 +54,13 @@ resource "aws_instance" "ec2_monitoring" {
   })
   tags = { Name = "techstock-ec2-monitoring" }
 }
+
+# Regra isolada: Abre a porta 3000 no Security Group do Frontend para acesso ao Grafana
+resource "aws_security_group_rule" "allow_grafana_port" {
+  type              = "ingress"
+  from_port         = 3000
+  to_port           = 3000
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.sg_frontend.id
+}
