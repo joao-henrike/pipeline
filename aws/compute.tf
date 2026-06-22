@@ -14,9 +14,11 @@ resource "aws_instance" "ec2_frontend" {
   vpc_security_group_ids = [aws_security_group.sg_frontend.id]
   key_name               = aws_key_pair.generated_key.key_name
   iam_instance_profile   = "LabInstanceProfile"
+
   user_data = templatefile("${path.module}/scripts/frontend.tftpl", {
     alb_dns = aws_lb.main_alb.dns_name
   })
+
   tags = { Name = "techstock-ec2-frontend" }
 }
 
@@ -27,6 +29,7 @@ resource "aws_instance" "ec2_backend" {
   vpc_security_group_ids = [aws_security_group.sg_backend.id]
   key_name               = aws_key_pair.generated_key.key_name
   iam_instance_profile   = "LabInstanceProfile"
+
   user_data = templatefile("${path.module}/scripts/backend.tftpl", {
     db_host     = aws_db_instance.postgres.address
     db_name     = aws_db_instance.postgres.db_name
@@ -34,6 +37,7 @@ resource "aws_instance" "ec2_backend" {
     db_password = aws_db_instance.postgres.password
     alb_dns     = aws_lb.main_alb.dns_name
   })
+
   tags = { Name = "techstock-ec2-backend" }
 }
 
@@ -52,10 +56,10 @@ resource "aws_instance" "ec2_monitoring" {
     grafana_password = "TechStock@2026!"
     github_raw_url   = "https://raw.githubusercontent.com/joao-henrike/pipeline/main/monitoring/grafana/dashboards"
   })
+
   tags = { Name = "techstock-ec2-monitoring" }
 }
 
-# Regra isolada: Abre a porta 3000 no Security Group do Frontend para acesso ao Grafana
 resource "aws_security_group_rule" "allow_grafana_port" {
   type              = "ingress"
   from_port         = 3000
