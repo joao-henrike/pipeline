@@ -50,7 +50,7 @@ resource "aws_instance" "ec2_monitoring" {
     alb_dns          = aws_lb.main_alb.dns_name
     backend_ip       = aws_instance.ec2_backend.private_ip
     grafana_password = "TechStock@2026!"
-    github_raw_url   = "https://raw.githubusercontent.com/SEU_USUARIO/pipeline/main/monitoring/grafana/dashboards"
+    github_raw_url   = "https://raw.githubusercontent.com/joao-henrike/pipeline/main/monitoring/grafana/dashboards"
   })
   tags = { Name = "techstock-ec2-monitoring" }
 }
