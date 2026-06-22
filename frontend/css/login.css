@@ -1,0 +1,104 @@
+:root {
+    --bg-dark: #0f0c16;
+    --panel-right-bg: #14101d;
+    --text-main: #ffffff;
+    --text-muted: #a7a1bc;
+    
+    --accent-purple: #8b5cf6;
+    --accent-hover: #7c3aed;
+    --glow-purple: rgba(139, 92, 246, 0.4);
+    
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --input-bg: rgba(0, 0, 0, 0.2);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+body { background-color: var(--bg-dark); color: var(--text-main); overflow: hidden; }
+
+/* Layout Split-Screen */
+.split-layout { display: flex; height: 100vh; width: 100%; }
+
+/* PAINEL ESQUERDO */
+.left-panel {
+    flex: 4; 
+    background-image: linear-gradient(rgba(15, 12, 22, 0.4), rgba(15, 12, 22, 0.9)), url('https://images.unsplash.com/photo-1542332213-9b5a5a3fad35?q=80&w=1200&auto=format&fit=crop');
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: background-image 1.5s ease-in-out; /* Mágica do crossfade suave */
+}
+
+.left-header { display: flex; justify-content: space-between; align-items: center; }
+.brand-logo { font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; }
+
+.left-footer h2 { font-size: 1.8rem; font-weight: 500; line-height: 1.2; margin-bottom: 2rem; }
+.carousel-indicators { display: flex; gap: 8px; }
+.dot { width: 30px; height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; transition: all 0.3s ease; }
+.dot.active { background: var(--accent-purple); box-shadow: 0 0 10px var(--accent-purple); width: 40px; }
+
+/* PAINEL DIREITO */
+.right-panel {
+    flex: 6; background-color: var(--panel-right-bg); display: flex; justify-content: center; align-items: center; padding: 2rem; position: relative; z-index: 1; overflow: hidden; 
+}
+.right-panel::before, .right-panel::after { content: ''; position: absolute; border-radius: 50%; filter: blur(80px); z-index: -1; opacity: 0.6; }
+.right-panel::before { top: -10%; left: -10%; width: 500px; height: 500px; background: radial-gradient(circle, var(--glow-purple) 0%, transparent 70%); }
+.right-panel::after { bottom: -10%; right: -10%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(67, 56, 202, 0.4) 0%, transparent 70%); }
+
+/* CONTAINER DE VIDRO */
+.form-container { 
+    width: 100%; max-width: 520px; transition: opacity 0.4s ease, transform 0.4s ease; opacity: 1; background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 24px; padding: 3rem; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+.form-container.hidden { display: none; opacity: 0; transform: translateY(10px); }
+
+.page-title { font-size: 2.2rem; font-weight: 600; margin-bottom: 0.5rem; letter-spacing: -0.5px; }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2.5rem; }
+.text-btn { background: none; border: none; color: var(--accent-purple); cursor: pointer; text-decoration: none; font-size: 0.95rem; font-weight: 500; transition: color 0.2s;}
+.text-btn:hover { color: var(--text-main); }
+
+/* Inputs Modernizados */
+form { display: flex; flex-direction: column; gap: 1.2rem; }
+.input-row { display: flex; gap: 1rem; }
+.input-field { width: 100%; padding: 1.1rem 1.2rem; background-color: var(--input-bg); border: 1px solid var(--glass-border); border-radius: 12px; color: var(--text-main); font-size: 0.95rem; transition: all 0.3s ease; }
+.input-field::placeholder { color: rgba(255,255,255,0.4); }
+.input-field:focus { outline: none; border-color: var(--accent-purple); background-color: rgba(255, 255, 255, 0.05); box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15); }
+.password-wrapper { position: relative; display: flex; align-items: center; }
+.password-wrapper .input-field { padding-right: 3rem; }
+.toggle-password { position: absolute; right: 1.2rem; color: var(--text-muted); cursor: pointer; transition: color 0.2s; }
+.toggle-password:hover { color: var(--text-main); }
+
+/* Checkbox Moderno */
+.checkbox-group { display: flex; align-items: center; margin: 0.5rem 0 1rem 0; }
+.custom-checkbox { display: flex; align-items: center; cursor: pointer; position: relative; font-size: 0.85rem; color: var(--text-muted); }
+.custom-checkbox input { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
+.checkmark { height: 20px; width: 20px; background-color: var(--input-bg); border: 1px solid var(--glass-border); border-radius: 6px; margin-right: 12px; display: flex; justify-content: center; align-items: center; transition: all 0.2s; }
+.custom-checkbox input:checked ~ .checkmark { background-color: var(--accent-purple); border-color: var(--accent-purple); }
+.checkmark:after { content: ""; display: none; width: 4px; height: 9px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px;}
+.custom-checkbox input:checked ~ .checkmark:after { display: block; }
+.custom-checkbox a { color: var(--accent-purple); text-decoration: none; }
+.custom-checkbox a:hover { color: var(--text-main); }
+.forgot-password { color: var(--text-muted); font-size: 0.85rem; text-decoration: none; transition: color 0.2s; }
+.forgot-password:hover { color: var(--text-main); }
+
+/* Botão Principal */
+.btn-primary { width: 100%; padding: 1.1rem; background-color: var(--accent-purple); color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3); }
+.btn-primary:hover { background-color: var(--accent-hover); box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5); transform: translateY(-1px); }
+
+/* Divisor Fino e Social Buttons */
+.divider { display: flex; align-items: center; text-align: center; margin: 2rem 0; color: var(--text-muted); font-size: 0.85rem; }
+.divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--glass-border); }
+.divider span { padding: 0 15px; }
+.social-buttons { display: flex; gap: 1rem; }
+.btn-social { flex: 1; display: flex; justify-content: center; align-items: center; gap: 0.5rem; padding: 1rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; color: var(--text-main); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.3s; }
+.btn-social:hover { background-color: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+.btn-social i { font-size: 1.2rem; }
+
+@media (max-width: 900px) {
+    .left-panel { display: none; }
+    .right-panel { flex: 1; padding: 1.5rem; }
+    .form-container { padding: 2rem; }
+}
