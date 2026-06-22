@@ -14,7 +14,7 @@ resource "aws_instance" "ec2_frontend" {
   vpc_security_group_ids = [aws_security_group.sg_frontend.id]
   key_name               = aws_key_pair.generated_key.key_name
   iam_instance_profile   = "LabInstanceProfile"
-  
+
   user_data = templatefile("${path.module}/scripts/frontend.tftpl", {
     alb_dns = aws_lb.main_alb.dns_name
   })
@@ -28,7 +28,7 @@ resource "aws_instance" "ec2_backend" {
   vpc_security_group_ids = [aws_security_group.sg_backend.id]
   key_name               = aws_key_pair.generated_key.key_name
   iam_instance_profile   = "LabInstanceProfile"
-  
+
   user_data = templatefile("${path.module}/scripts/backend.tftpl", {
     db_host     = aws_db_instance.postgres.address
     db_name     = aws_db_instance.postgres.db_name
@@ -46,14 +46,14 @@ resource "aws_instance" "ec2_monitoring" {
   vpc_security_group_ids = [aws_security_group.sg_frontend.id]
   key_name               = aws_key_pair.generated_key.key_name
   iam_instance_profile   = "LabInstanceProfile"
-  
+
   user_data = templatefile("${path.module}/scripts/monitoring.tftpl", {
     alb_dns          = aws_lb.main_alb.dns_name
     backend_ip       = aws_instance.ec2_backend.private_ip
     grafana_password = "TechStock@2026!"
-    
+
     # Satisfazendo as duas exigencias do compilador para liberar o destroy
-    github_raw_url   = "https://raw.githubusercontent.com/SEU_USUARIO/pipeline/main/monitoring/grafana/dashboards"
+    github_raw_url = "https://raw.githubusercontent.com/SEU_USUARIO/pipeline/main/monitoring/grafana/dashboards"
   })
   tags = { Name = "techstock-ec2-monitoring" }
 }
