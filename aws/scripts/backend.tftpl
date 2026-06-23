@@ -1,98 +1,17 @@
 #!/bin/bash
-# =============================================================================
-# setup-backend.tftpl — Adaptado para Cloud-Init (Ubuntu 22.04)
-# Arquitetura preservada da v4 original, mas automatizada.
-# =============================================================================
-exec > >(tee /var/log/user-data-backend.log|logger -t user-data -s 2>/dev/console) 2>&1
+export DB_HOST="${db_host}"
+export DB_NAME="${db_name}"
+export DB_USER="${db_user}"
+export DB_PASSWORD="${db_password}"
 
-echo "============================================"
-echo " TechStock — Setup Backend Automatizado"
-echo "============================================"
-
-APP_DIR="/opt/techstock"
-NODE_EXPORTER_VERSION="1.7.0"
-
-echo "--- [1/6] Atualizando sistema (Ubuntu) ---"
 apt-get update -y
-curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-apt-get install -y nodejs postgresql-client git wget tar jq
+apt-get install -y python3-flask python3-psycopg2 git
 
-echo "--- [2/6] Criando usuario e diretorio ---"
-useradd -r -m -d $APP_DIR -s /bin/bash techstock
-mkdir -p $APP_DIR/public
+mkdir -p /home/ubuntu/backend
+cd /home/ubuntu/backend
 
-echo "--- [3/6] Arquivo .env Injetado via Terraform ---"
-# O Terraform troca essas chaves pelos dados reais sem precisar do Secrets Manager
-cat > $APP_DIR/.env << ENV
-DB_HOST=${db_host}
-DB_PORT=5432
-DB_NAME=${db_name}
-DB_USER=${db_user}
-DB_PASSWORD=${db_password}
-PORT=3000
-NODE_ENV=production
-CORS_ORIGIN=http://${alb_dns}
-ENV
+git clone https://github.com/joao-henrike/pipeline.git repo_temp
+mv repo_temp/backend/server.py .
+rm -rf repo_temp
 
-chown techstock:techstock $APP_DIR/.env
-chmod 640 $APP_DIR/.env
-
-echo "--- [4/6] Mock da API (Para o Load Balancer nao matar a maquina) ---"
-# Temporario ate voce conectar o GITHUB_RAW real futuramente
-cat > $APP_DIR/server.js << 'APP'
-const http = require('http');
-http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ status: "Backend API TechStock OK" }));
-}).listen(3000, '0.0.0.0');
-APP
-chown -R techstock:techstock $APP_DIR
-
-echo "--- [5/6] Configurando servico systemd ---"
-cat > /etc/systemd/system/techstock.service << 'SVC'
-[Unit]
-Description=TechStock Backend API
-After=network.target
-
-[Service]
-Type=simple
-User=techstock
-WorkingDirectory=/opt/techstock
-EnvironmentFile=/opt/techstock/.env
-ExecStart=/usr/bin/node server.js
-Restart=on-failure
-RestartSec=5
-SyslogIdentifier=techstock
-
-[Install]
-WantedBy=multi-user.target
-SVC
-
-systemctl daemon-reload
-systemctl enable techstock
-systemctl start techstock
-
-echo "--- [6/6] Node Exporter ---"
-wget -q "https://github.com/prometheus/node_exporter/releases/download/v$NODE_EXPORTER_VERSION/node_exporter-$NODE_EXPORTER_VERSION.linux-amd64.tar.gz" -O /tmp/ne.tar.gz
-tar xzf /tmp/ne.tar.gz -C /tmp/
-cp /tmp/node_exporter-$NODE_EXPORTER_VERSION.linux-amd64/node_exporter /usr/local/bin/
-chmod +x /usr/local/bin/node_exporter
-
-cat > /etc/systemd/system/node_exporter.service << 'NE'
-[Unit]
-Description=Node Exporter
-After=network.target
-[Service]
-Type=simple
-User=nobody
-ExecStart=/usr/local/bin/node_exporter
-Restart=on-failure
-[Install]
-WantedBy=multi-user.target
-NE
-
-systemctl daemon-reload
-systemctl enable node_exporter
-systemctl start node_exporter
-
-echo "Setup Backend Concluido!"
+nohup python3 server.py > /home/ubuntu/backend/backend.log 2>&1 &

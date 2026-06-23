@@ -1,0 +1,66 @@
+/* =========================================
+   ESTRUTURA DE GRID (Estilo Grafana)
+   ========================================= */
+.grafana-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-top: 10px;
+}
+
+.panel {
+    background-color: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-box);
+    padding: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Painéis de KPI (Números Grandes) */
+.kpi-panel {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    height: 120px;
+}
+
+.kpi-title {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.kpi-value {
+    color: var(--text-primary);
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.kpi-value.critico { color: #f87171; }
+.kpi-value.ok { color: #34d399; }
+
+/* Painéis de Gráficos */
+.chart-panel {
+    min-height: 350px;
+}
+
+.panel-header {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 1200px) {
+    .grafana-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

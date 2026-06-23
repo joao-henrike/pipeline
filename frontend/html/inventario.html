@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechStock - Inventário</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/inventario.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-box-open"></i> TechStock</h2>
+            <p>Honey Badger IT</p>
+        </div>
+        <ul class="nav-links">
+            <li class="active"><a href="inventario.html"><i class="fas fa-server"></i> Inventário</a></li>
+            <li><a href="movimentacoes.html"><i class="fas fa-exchange-alt"></i> Movimentações</a></li>
+            <li><a href="usuarios.html"><i class="fas fa-users"></i> Gestão de Usuários</a></li>
+            <li><a href="dashboard.html"><i class="fas fa-chart-line"></i> Dashboard (Grafana)</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="login.html" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="topbar">
+            <h1>Controle de Ativos</h1>
+            <button class="btn-primary" id="btnNovoAtivo">
+                <i class="fas fa-plus"></i> Adicionar Ativo
+            </button>
+        </header>
+
+        <section class="table-container">
+            <div class="table-controls">
+                <input type="text" id="searchInput" placeholder="Buscar por SKU ou Nome..." class="search-bar">
+                <select id="filterCategory" class="filter-dropdown">
+                    <option value="all">Todas as Categorias</option>
+                    <option value="hardware">Hardware</option>
+                    <option value="rede">Rede</option>
+                    <option value="periferico">Periféricos</option>
+                </select>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Equipamento</th>
+                        <th>Categoria</th>
+                        <th>Qtd</th>
+                        <th>Localização</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaInventario"></tbody>
+            </table>
+        </section>
+    </main>
+
+    <div id="modalAtivo" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Adicionar Novo Ativo</h3>
+                <button class="btn-close" id="btnFecharModal"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="formAtivo">
+                <input type="hidden" id="itemIndex" value="-1">
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="inputSku">SKU (Código)</label>
+                        <input type="text" id="inputSku" class="form-input" placeholder="Ex: SRV-001" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputNome">Equipamento</label>
+                        <input type="text" id="inputNome" class="form-input" placeholder="Ex: Servidor Dell" required>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="inputCategoria">Categoria</label>
+                        <select id="inputCategoria" class="form-input" required>
+                            <option value="Hardware">Hardware</option>
+                            <option value="Rede">Rede</option>
+                            <option value="Periférico">Periférico</option>
+                            <option value="Licença">Licença/Software</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputQtd">Quantidade</label>
+                        <input type="number" id="inputQtd" class="form-input" min="0" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="inputLocal">Localização Física</label>
+                    <input type="text" id="inputLocal" class="form-input" placeholder="Ex: Rack 01 - U12" required>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btnCancelar">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar Ativo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/inventario.js"></script>
+</body>
+</html>

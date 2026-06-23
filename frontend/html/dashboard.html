@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechStock - Dashboard</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-box-open"></i> TechStock</h2>
+            <p>Honey Badger IT</p>
+        </div>
+        <ul class="nav-links">
+            <li><a href="inventario.html"><i class="fas fa-server"></i> Inventário</a></li>
+            <li><a href="movimentacoes.html"><i class="fas fa-exchange-alt"></i> Movimentações</a></li>
+            <li><a href="usuarios.html"><i class="fas fa-users"></i> Gestão de Usuários</a></li>
+            <li class="active"><a href="dashboard.html"><i class="fas fa-chart-line"></i> Dashboard (Grafana)</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="login.html" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="topbar">
+            <h1>Visão Operacional (Telemetry)</h1>
+            <div class="topbar-actions">
+                <span style="color: var(--text-muted); font-size: 0.85rem; margin-right: 15px;">Atualizado: Agora mesmo</span>
+                <button class="btn-primary" onclick="location.reload()">
+                    <i class="fas fa-sync-alt"></i> Atualizar Painel
+                </button>
+            </div>
+        </header>
+
+        <section class="grafana-grid">
+            <div class="panel kpi-panel">
+                <div class="kpi-title">Total de Ativos</div>
+                <div class="kpi-value" id="kpiTotal">142</div>
+            </div>
+            <div class="panel kpi-panel">
+                <div class="kpi-title">Estoque Crítico</div>
+                <div class="kpi-value critico" id="kpiCritico">7</div>
+            </div>
+            <div class="panel kpi-panel">
+                <div class="kpi-title">Movimentações (Hoje)</div>
+                <div class="kpi-value" id="kpiMov">18</div>
+            </div>
+            <div class="panel kpi-panel">
+                <div class="kpi-title">Saúde do Sistema</div>
+                <div class="kpi-value ok">99.9%</div>
+            </div>
+
+            <div class="panel chart-panel" style="grid-column: span 2;">
+                <div class="panel-header">Fluxo de Entradas e Saídas (Últimos 7 Dias)</div>
+                <canvas id="chartFluxo"></canvas>
+            </div>
+            
+            <div class="panel chart-panel" style="grid-column: span 2;">
+                <div class="panel-header">Distribuição por Categoria</div>
+                <div style="width: 70%; margin: 0 auto;">
+                    <canvas id="chartCategoria"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>

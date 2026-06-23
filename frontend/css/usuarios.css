@@ -1,0 +1,42 @@
+/* Elementos específicos da tela de Gestão de Usuários */
+.table-container { background-color: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius-box); }
+.table-controls { display: flex; gap: 12px; padding: 20px; border-bottom: 1px solid var(--border-color); }
+.search-bar, .filter-dropdown { background-color: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-primary); padding: 9px 14px; border-radius: var(--radius-box); outline: none; font-size: 0.9rem; }
+.search-bar:focus { border-color: var(--primary-purple); }
+.search-bar { width: 320px; }
+
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th, .data-table td { padding: 14px 20px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
+.data-table th { color: var(--text-muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; background-color: rgba(0,0,0,0.1); }
+.data-table tr:hover td { background-color: var(--surface-hover); }
+
+/* Badges de Função (IAM) */
+.badge-funcao { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+.badge-funcao.administrador { background-color: rgba(124, 58, 237, 0.15); color: #a78bfa; }
+.badge-funcao.operador { background-color: rgba(16, 185, 129, 0.15); color: #34d399; }
+.badge-funcao.auditor { background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+
+/* Status da Conta */
+.status-user { font-size: 0.85rem; display: flex; align-items: center; gap: 6px; }
+.status-user::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.status-user.ativo::before { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+.status-user.inativo::before { background-color: #ef4444; }
+
+.btn-action { background: none; border: none; cursor: pointer; margin-right: 14px; font-size: 1rem; color: var(--text-muted); transition: 0.2s; }
+.btn-action:hover { color: var(--text-primary); }
+
+/* MODAL */
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+.modal.hidden { display: none; }
+.modal-content { background-color: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius-box); width: 480px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 1px solid var(--border-color); }
+.btn-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; }
+.btn-close:hover { color: #f87171; }
+#formUsuario { padding: 25px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+.form-input { width: 100%; background-color: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-primary); padding: 10px 12px; border-radius: var(--radius-box); outline: none; font-size: 0.9rem; }
+.form-input:focus { border-color: var(--primary-purple); }
+.modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+.btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); padding: 10px 18px; border-radius: var(--radius-box); cursor: pointer; }
